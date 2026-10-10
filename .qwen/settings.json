@@ -6,7 +6,8 @@
       "Bash(dotnet *)",
       "Bash(dir *)",
       "Bash(openspec *)",
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(move *)"
     ]
   },
   "$version": 4
