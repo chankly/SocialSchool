@@ -1,0 +1,5 @@
+﻿
+.topbar-wrapper .link:before {
+    content: url('logo-performance.svg');
+    margin-right: 20px;
+}

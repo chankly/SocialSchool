@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/HSoft.SocialSchool.Api/HSoft.SocialSchool.Api.csproj" />
+  <Project Path="src/HSoft.SocialSchool.Application/HSoft.SocialSchool.Application.csproj" />
+  <Project Path="src/HSoft.SocialSchool.Domain/HSoft.SocialSchool.Domain.csproj" />
+  <Project Path="src/HSoft.SocialSchool.Persistence/HSoft.SocialSchool.Persistence.csproj" />
+</Solution>

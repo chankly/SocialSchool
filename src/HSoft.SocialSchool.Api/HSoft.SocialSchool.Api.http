@@ -1,0 +1,6 @@
+@HSoft.SocialSchool.Api_HostAddress = http://localhost:5094
+
+GET {{HSoft.SocialSchool.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
