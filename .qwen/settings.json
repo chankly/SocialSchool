@@ -4,7 +4,9 @@
       "Bash(del *)",
       "Bash(rd *)",
       "Bash(dotnet *)",
-      "Bash(dir *)"
+      "Bash(dir *)",
+      "Bash(openspec *)",
+      "Bash(findstr *)"
     ]
   },
   "$version": 4

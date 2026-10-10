@@ -18,8 +18,9 @@ conservan las **decisiones arquitectónicas** y las **primitivas de dominio**, n
 Consecuencias prácticas:
 
 - Los **requisitos** están en `openspec/specs/` (ver *Notas Importantes*): es la fuente de verdad.
-- El **modelo de dominio ya está implementado** en `Domain/Entities/` y `Domain/Enumerations/`.
-  Todavía **no** hay configuraciones EF Core, repositorios ni casos de uso.
+- El **modelo de dominio ya está implementado** en `Domain/Entities/` y `Domain/Enumerations/`, y
+  **ya se persiste** (configuraciones EF Core, repositorios y migración inicial). Todavía **no** hay
+  casos de uso.
 - No deben deducirse requisitos del código ni inventarse reglas: el código implementa lo que dicen
   los specs, no al contrario.
 - Al añadir funcionalidad nueva hay que distinguir entre **decisiones arquitectónicas reales**
@@ -29,7 +30,8 @@ Estado actual del repositorio, relevante para planificar trabajo:
 
 - La solución es `HSoft.SocialSchool.slnx`, en la raíz (un nivel por encima de `src/`).
 - **No existe** ningún proyecto de tests.
-- **No existe** carpeta `Migrations/` en Persistence: aún no se ha generado ninguna migración EF Core.
+- Persistence ya tiene **18 configuraciones** EF Core, **13 repositorios** y la carpeta
+  **`Migrations/`** con la migración inicial `InitialCreate`, **sin aplicar** a ninguna base de datos.
 - **No hay repositorio git** inicializado en esta carpeta (no hay historial que consultar).
 - No existe `.template.config/` en el repositorio.
 - El dominio tiene **18 entidades y 10 enumeraciones** implementadas. `Domain/ValueObjects/` y
@@ -246,7 +248,7 @@ de la API.
 ### Contratos
 
 - `Repositories/`: interfaces de repositorio propias de la capa de aplicación, que extienden
-  `IBaseRepository<T>` del dominio. **Hoy no existe ninguna.**
+  `IBaseRepository<T>` del dominio. Hay una por agregado (**13**), todas sin métodos adicionales.
 - `Services/`: interfaces de servicios de aplicación (ver `IMigrationService`).
 - `Options/`: clases de opciones ligadas a configuración (ver `ApplicationOptions`).
 - `DomainEventHandlers/`: **no existe todavía**. Si se añaden handlers de eventos de dominio, este es
@@ -278,7 +280,7 @@ constructor.
     (`CurrentValues.SetValues`) en lugar de lanzar.
   - `Save` decide entre `Add` y `Modified` según `Id == Guid.Empty`.
 - Los repositorios concretos son mínimos: heredan de `BaseRepository<T>` e implementan la interfaz
-  de Application. **Hoy no existe ninguno**: sólo la base genérica.
+  de Application. Hay uno por agregado (**13**) y ninguno declara métodos propios todavía.
 
 ### Módulo Autofac
 
@@ -460,8 +462,9 @@ No se usan excepciones de dominio personalizadas: el dominio lanza `ArgumentExce
   `MigrationsAssembly` apuntando al propio ensamblado de Persistence y `EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: 5s)`.
 - **Configuraciones**: clases `IEntityTypeConfiguration<T>` en `Configurations/`, aplicadas
   automáticamente, así que **no hay que registrarlas a mano**. Se definen `ToTable`, clave primaria,
-  longitudes máximas, `IsRequired`, índices con nombre explícito (`IX_...`) y relaciones. **Hoy
-  `Configurations/` está vacío**: el dominio nuevo todavía no está mapeado.
+  longitudes máximas, `IsRequired`, índices con nombre explícito (`IX_...`) y relaciones. Las 18
+  entidades del dominio ya están mapeadas (`internal sealed`, una por entidad) y las que tienen
+  colección hija declaran la relación desde el lado principal, para que EF use el backing field.
 - **Value objects**: se mapean como **owned types** (`OwnsOne`), aplanando sus propiedades en
   columnas del propietario. El dominio actual **no tiene value objects**, así que hoy no hay ningún
   caso al que aplicarlo; la convención se mantiene para cuando se añadan.
@@ -488,8 +491,10 @@ Los eventos marcados con `IUniqueDomainEvent` se deduplican por valor (de ahí q
 
 ### Migraciones
 
-No hay migraciones generadas todavía. El `DbContext` vive en Persistence pero el startup project es
-Api, así que al generarlas hay que indicar ambos proyectos (ver sección de comandos más abajo).
+Hay una migración generada, `InitialCreate` (con su snapshot), en `Persistence/Migrations/`. **No se
+ha aplicado** a ninguna base de datos: `ConnectionStrings:MyCompany` sigue siendo la cadena de
+ejemplo inválida. El `DbContext` vive en Persistence pero el startup project es Api, así que al
+generar migraciones hay que indicar ambos proyectos (ver sección de comandos más abajo).
 
 ---
 
@@ -694,8 +699,8 @@ Decisiones de modelado vigentes:
   solicitud de amistad, ausencia de bloqueo, unicidad del nick, quién puede ver qué) corresponde al
   caso de uso; las entidades sólo protegen sus propios invariantes. Está anotado en las XML docs de
   `FriendRequest`.
-- **Pendiente de construir**: configuraciones EF Core, repositorios, casos de uso, migración inicial
-  y —si se quieren— eventos de dominio (hoy no hay ninguno definido).
+- **Pendiente de construir**: casos de uso, migración aplicada a una base de datos y —si se
+  quieren— eventos de dominio (hoy no hay ninguno definido).
 
 ### Restos de plantilla que siguen presentes
 
@@ -724,8 +729,8 @@ los behaviors de pipeline, el `DbContext` con la publicación de eventos en dos 
   código (`securityServer:authority`, `SecurityServer:ApiName`, `SecurityServer:ApiSecret`) deben
   venir de User Secrets o de variables de entorno.
 - **Desalineación de versiones de paquetes** (target `net10.0`):
-  - `Api` referencia `Microsoft.EntityFrameworkCore.Design 8.0.22` mientras `Persistence` usa EF Core
-    `10.0.9`.
+  - `Microsoft.EntityFrameworkCore.Design` de `Api` está **alineado** con `Persistence` en `10.0.9`
+    (y la herramienta `dotnet ef` está en `10.0.9`); ya no es una desalineación.
   - `Api` referencia `Serilog.AspNetCore 8.0.3` y `Microsoft.AspNetCore.Authentication.JwtBearer
     8.0.25`; `Application` usa `Serilog 4.3.1`.
   - `Swashbuckle.AspNetCore 6.5.0` y `Duende.AspNetCore.Authentication.OAuth2Introspection 7.0.1`.
