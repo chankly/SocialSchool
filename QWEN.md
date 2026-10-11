@@ -347,17 +347,26 @@ que lanza el `ValidationBehavior` no tienen garantizada su conversión a `400 Pr
 
 Configurada en `ServicesCollectionExtensions.AddAuthentication`:
 
-- Esquema por defecto: `"token"`.
-- **JWT Bearer** en el esquema `"token"`, con `Authority = configuration["securityServer:authority"]`,
-  `ValidTypes = ["at+jwt"]` y `ValidateAudience = false`.
-- **OAuth2 Introspection** (Duende) en el esquema `"Introspection"`, con
-  `SecurityServer:Authority`, `SecurityServer:ApiName` y `SecurityServer:ApiSecret`.
-- `AuthenticationForwardSelector.ForwardReferenceToken()` (junto a
-  `HttpContextAuthExtensions.IsReferenceBearerToken`) reenvía al esquema `"Introspection"` cuando el
-  token es un *reference token* (no contiene puntos), y deja pasar el JWT en caso contrario.
-- Existe una policy `"assessment.list"` declarada con `RequireClaim("")` (placeholder de plantilla).
-- **Ningún controlador tiene atributos `[Authorize]`**: a día de hoy los endpoints están expuestos
-  sin protección efectiva a nivel de acción.
+- Esquema por defecto: `JwtBearerDefaults.AuthenticationScheme` (`"Bearer"`).
+- **Un único esquema JWT Bearer contra Keycloak**: `Authority = configuration["Keycloak:Authority"]`,
+  `Audience = configuration["Keycloak:Audience"]` (lo que activa la validación de emisor y de
+  audiencia), `RequireHttpsMetadata = true` y `MapInboundClaims = false` para leer los claims
+  originales (el `sub` se llama literalmente `sub`).
+- **No se restringe `ValidTypes`**: el `at+jwt` de la plantilla rechazaba los tokens de Keycloak, que
+  no usan RFC 9068. La distinción entre access token e ID token la garantiza la **audiencia** (el ID
+  token va destinado al cliente web, no a `SocialSchool-Api`). Si el realm emitiese `at+jwt`, habría
+  que volver a fijarlo.
+- **Denegación por defecto**: `options.FallbackPolicy = RequireAuthenticatedUser()`. Todo endpoint
+  exige token salvo los marcados `[AllowAnonymous]`. Consecuencia: `ManagementController` (incluido
+  `PUT /api/management/migration/apply`) requiere token. **Swagger no se ve afectado**, porque
+  `UseSwagger`/`UseSwaggerUI` se sirven antes del middleware de autenticación.
+- **`ICurrentUser`**: contrato en `Application/Services/ICurrentUser.cs` (`ExternalId`, `IsAuthenticated`)
+  e implementación en `Api/Infrastructure/Security/CurrentUser.cs`, registrada como `Scoped` en
+  `AddAuthorizationHandlers`. Permite a los casos de uso obtener el `sub` sin conocer `HttpContext`.
+- **No hay introspección**: se eliminaron el esquema `OAuth2Introspection` de Duende, el reenvío de
+  *reference tokens* (`AuthenticationForwardSelector`, `HttpContextAuthExtensions`) y la dependencia
+  `Duende.AspNetCore.Authentication.OAuth2Introspection`. La API solo acepta JWT.
+- Las claves `securityServer:*` / `SecurityServer:*` ya no se usan.
 
 ### Swagger
 
@@ -400,7 +409,10 @@ Reglas a seguir al registrar servicios nuevos:
 
 ### Fuentes de configuración
 
-`ConfigureHost` aplica, en este orden, sobre el content root igual a `Directory.GetCurrentDirectory()`:
+`ConfigureHost` declara las fuentes sobre `builder.Configuration` (las APIs de `IHostBuilder` no están
+soportadas en `WebApplicationBuilder`). El content root es el directorio de trabajo, que
+`WebApplicationBuilder` fija por defecto; ya no se llama a `UseContentRoot`. Orden (la última fuente
+gana):
 
 1. `appsettings.json` (**obligatorio**).
 2. `appsettings.{Environment}.json` (opcional).
@@ -409,9 +421,8 @@ Reglas a seguir al registrar servicios nuevos:
 5. User Secrets (`AddUserSecrets<Program>`).
 6. Variables de entorno.
 
-Claves consumidas por el código: `ConnectionStrings:MyCompany` (SQL Server),
-`securityServer:authority` / `SecurityServer:Authority`, `SecurityServer:ApiName`,
-`SecurityServer:ApiSecret`, `AuditingEnabled`, y la sección `Serilog`.
+Claves consumidas por el código: `ConnectionStrings:MyCompany` (SQL Server), `Keycloak:Authority` y
+`Keycloak:Audience` (identidad), `AuditingEnabled`, y la sección `Serilog`.
 
 ---
 
@@ -627,8 +638,8 @@ dotnet ef migrations add <Nombre> --project HSoft.SocialSchool.Persistence --sta
 dotnet ef database update       --project HSoft.SocialSchool.Persistence --startup-project HSoft.SocialSchool.Api
 ```
 
-En runtime, las migraciones pendientes se aplican con `PUT /api/management/migration/apply`
-(actualmente sin `[Authorize]`).
+En runtime, las migraciones pendientes se aplican con `PUT /api/management/migration/apply`, que
+**ahora requiere autenticación** por la `FallbackPolicy` (hay que presentar un token de Keycloak).
 
 ---
 
@@ -726,14 +737,14 @@ los behaviors de pipeline, el `DbContext` con la publicación de eventos en dos 
   `ConnectionStrings:MyCompany = "MyCompany"`, que no es una cadena de conexión válida. Hay que
   sustituirla para poder ejecutar la API contra SQL Server.
 - **`security.json` no se carga**: la línea que lo añadía está comentada. Las claves que espera el
-  código (`securityServer:authority`, `SecurityServer:ApiName`, `SecurityServer:ApiSecret`) deben
-  venir de User Secrets o de variables de entorno.
+  código (`Keycloak:Authority` y `Keycloak:Audience`) deben venir de User Secrets o de variables de
+  entorno; `appsettings.json` solo lleva valores de ejemplo.
 - **Desalineación de versiones de paquetes** (target `net10.0`):
   - `Microsoft.EntityFrameworkCore.Design` de `Api` está **alineado** con `Persistence` en `10.0.9`
     (y la herramienta `dotnet ef` está en `10.0.9`); ya no es una desalineación.
   - `Api` referencia `Serilog.AspNetCore 8.0.3` y `Microsoft.AspNetCore.Authentication.JwtBearer
     8.0.25`; `Application` usa `Serilog 4.3.1`.
-  - `Swashbuckle.AspNetCore 6.5.0` y `Duende.AspNetCore.Authentication.OAuth2Introspection 7.0.1`.
+  - `Swashbuckle.AspNetCore 6.5.0`.
   - `Microsoft.AspNetCore.OpenApi` está comentado en `Api.csproj`.
   Cualquier alineación debe hacerse de forma consistente en toda la solución.
 - **`MyCompanyDbContext` se registra con `AddDbContextPool` y recibe `IMediator` (scoped) por

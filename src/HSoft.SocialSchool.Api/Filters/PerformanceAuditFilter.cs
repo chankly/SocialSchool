@@ -1,12 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
 
 namespace HSoft.SocialSchool.Api.Filters
 {
     public class PerformanceAuditFilter : ActionFilterAttribute
     {
+        private const string SubjectClaimType = "sub";
+        private const string KeycloakClientClaimType = "azp";
+        private const string GenericClientClaimType = "client_id";
+
         private readonly ILogger _logger;
         private readonly bool _auditEnabled;
 
@@ -79,7 +82,7 @@ namespace HSoft.SocialSchool.Api.Filters
 
                 if (_auditEnabled)
                 {
-                    var (subject, clientId) = ExtractTokenClaims(request);
+                    var (subject, clientId) = ExtractTokenClaims(context.HttpContext);
 
                     _logger.LogInformation(
                         "AUDIT | User: {Subject} | Client: {ClientId} | {Method} {Path} | Status: {StatusCode} | Start: {StartTime:O} | End: {EndTime:O} | Elapsed: {ElapsedMs}ms",
@@ -133,38 +136,23 @@ namespace HSoft.SocialSchool.Api.Filters
             }
         }
 
-        private static (string subject, string clientId) ExtractTokenClaims(HttpRequest request)
+        // Reads the identity from the authenticated principal instead of decoding the token by hand,
+        // so the audit entry no longer depends on the token format.
+        private static (string subject, string clientId) ExtractTokenClaims(HttpContext httpContext)
         {
-            try
-            {
-                if (!request.Headers.TryGetValue("Authorization", out var authHeader))
-                    return ("anonymous", "unknown");
+            var user = httpContext.User;
 
-                var parts = authHeader.ToString().Split('.');
-                if (parts.Length != 3)
-                    return ("unknown", "unknown");
+            if (user?.Identity?.IsAuthenticated != true)
+                return ("anonymous", "unknown");
 
-                var payload = parts[1];
-                payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+            var subject = user.FindFirst(SubjectClaimType)?.Value ?? "unknown";
 
-                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-                var token = JsonSerializer.Deserialize<TokenPayload>(decoded);
+            // Keycloak reports the calling client in "azp"; other providers use "client_id".
+            var clientId = user.FindFirst(KeycloakClientClaimType)?.Value
+                           ?? user.FindFirst(GenericClientClaimType)?.Value
+                           ?? "unknown";
 
-                return (token?.Sub ?? "unknown", token?.ClientId ?? "unknown");
-            }
-            catch
-            {
-                return ("unknown", "unknown");
-            }
-        }
-
-        private sealed class TokenPayload
-        {
-            [System.Text.Json.Serialization.JsonPropertyName("sub")]
-            public string? Sub { get; init; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("client_id")]
-            public string? ClientId { get; init; }
+            return (subject, clientId);
         }
     }
 }

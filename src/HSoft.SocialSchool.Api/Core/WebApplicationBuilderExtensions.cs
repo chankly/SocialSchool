@@ -20,8 +20,8 @@ namespace HSoft.SocialSchool.Api.Core
                     .Enrich.WithThreadId(),
                 writeToProviders: false);
 
-            builder.Host.ConfigureHost(configureAutofacContainer);
-            builder.WebHost.UseKestrel().UseContentRoot(Directory.GetCurrentDirectory());
+            builder.ConfigureHost(configureAutofacContainer);
+            builder.WebHost.UseKestrel();
             builder.Services.AddConfiguredOptions(builder.Configuration);
             builder.Services.AddConfiguredControllers(builder.Configuration);
             builder.Services.AddAuthentication(builder.Configuration);

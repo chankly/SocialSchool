@@ -7,7 +7,8 @@
       "Bash(dir *)",
       "Bash(openspec *)",
       "Bash(findstr *)",
-      "Bash(move *)"
+      "Bash(move *)",
+      "Skill(openspec-explore)"
     ]
   },
   "$version": 4

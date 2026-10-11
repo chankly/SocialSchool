@@ -1,7 +1,8 @@
-﻿using Duende.AspNetCore.Authentication.OAuth2Introspection;
-using HSoft.SocialSchool.Api.Extensions;
-using HSoft.SocialSchool.Api.Filters;
+﻿using HSoft.SocialSchool.Api.Filters;
+using HSoft.SocialSchool.Api.Infrastructure.Security;
 using HSoft.SocialSchool.Application.Options;
+using HSoft.SocialSchool.Application.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -32,30 +33,25 @@ namespace HSoft.SocialSchool.Api.Core
         public static IServiceCollection AddAuthentication(this IServiceCollection services, ConfigurationManager configuration)
         {
             services
-                 .AddAuthorization(options =>
-                 {
-                     options.AddPolicy("assessment.list", p => p.RequireClaim(""));
-                 })
-                .AddAuthentication("token")
-                // JWT tokens
-                .AddJwtBearer("token", options =>
+                .AddAuthorization(options =>
                 {
-                    options.Authority = configuration["securityServer:authority"];
-                    options.RequireHttpsMetadata = true;
-                    options.TokenValidationParameters.ValidTypes = ["at+jwt"];
-                    options.TokenValidationParameters.ValidateAudience = false;
-
-
-                    // if token does not contain a dot, it is a reference token
-                    // Forward to the registered introspection scheme. Use the default name ("Introspection").
-                    options.ForwardDefaultSelector = AuthenticationForwardSelector.ForwardReferenceToken();
+                    // Deny by default: every endpoint requires an authenticated user unless it declares
+                    // itself anonymous with [AllowAnonymous].
+                    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                        .RequireAuthenticatedUser()
+                        .Build();
                 })
-                .AddOAuth2Introspection("Introspection", options =>
-                  {
-                      options.Authority = configuration["SecurityServer:Authority"];
-                      options.ClientId = configuration["SecurityServer:ApiName"];
-                      options.ClientSecret = configuration["SecurityServer:ApiSecret"];
-                  });
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = configuration["Keycloak:Authority"];
+                    options.Audience = configuration["Keycloak:Audience"];
+                    //options.TokenValidationParameters.ValidateAudience = false;
+                    options.RequireHttpsMetadata = bool.TryParse(configuration["Keycloak:validateMetadata"], out var result) ? result : true;
+                    // Keep the original claim names (notably "sub") instead of the default inbound mapping.
+                    options.MapInboundClaims = false;
+                });
+
             return services;
         }
 
@@ -106,6 +102,7 @@ namespace HSoft.SocialSchool.Api.Core
         public static IServiceCollection AddAuthorizationHandlers(this IServiceCollection services)
         {
             services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUser, CurrentUser>();
 
             return services;
         }
