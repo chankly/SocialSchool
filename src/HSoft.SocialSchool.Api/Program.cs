@@ -37,3 +37,7 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
     //services.RegisterExternalAgents();
     //services.AddStackExchangeOptions(configuration);
 }
+
+// Top-level statements generate an internal Program class; the integration tests need it reachable.
+/// <summary>Punto de entrada de la API. Se declara parcial para que los tests de integración puedan referenciarlo.</summary>
+public partial class Program { }

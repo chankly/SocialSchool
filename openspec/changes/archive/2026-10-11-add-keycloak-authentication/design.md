@@ -91,6 +91,19 @@ se lee el identificador del cliente desde `azp` (lo que emite Keycloak) además 
 degradar en silencio a `unknown`. *Alternativa descartada*: dejarlo como está; el log de auditoría
 quedaría ciego precisamente con el proveedor nuevo.
 
+**10. (Alcance añadido durante la implementación) El bootstrap del host se ajusta a
+`WebApplicationBuilder`.** `HostBuilderExtensions.ConfigureHost` usaba APIs de `IHostBuilder`
+(`ConfigureAppConfiguration`, `UseContentRoot`) sobre un `WebApplicationBuilder`, y
+`WebApplicationBuilderExtensions` fijaba además `WebHost.UseContentRoot`, algo que Microsoft documenta
+como **no soportado**: los builders lanzan `NotSupportedException` en cuanto el content root no
+coincide con el directorio actual. Funcionaba en producción sólo porque ambos valores coinciden, pero
+`WebApplicationFactory` sí cambia el content root y el host de test no podía construirse (los 12 tests
+fallaban al crear el host). Se declaran las mismas fuentes de configuración sobre
+`builder.Configuration` y se eliminan los dos `UseContentRoot` redundantes (el content root ya es el
+directorio de trabajo). *Alternativas descartadas*: fijar el directorio de trabajo del proceso de tests
+al proyecto Api (funciona, pero es un truco frágil que dejaría el bootstrap en una ruta no soportada) y
+renunciar a `WebApplicationFactory` (dejaría la canalización HTTP real sin probar).
+
 ## Risks / Trade-offs
 
 - **Sin *audience mapper* en Keycloak, `aud` no contendrá `SocialSchool-Api` y se rechazarán todos los

@@ -81,8 +81,12 @@ Está previsto estudiarlo en el futuro como un tipo de usuario propio con panel 
 
 ## 4. Cuenta, registro y sesión
 
-- **Autenticación: mediante Google o Facebook.** No hay credenciales propias (ni contraseña, ni
-  verificación de email, ni recuperación de contraseña por parte de este sistema).
+- **Autenticación: mediante Keycloak**, que federa Google dentro de Keycloak. La API solo acepta
+  **access tokens JWT emitidos por Keycloak** (valida autoridad, firma, expiración y audiencia
+  `SocialSchool-Api`) y exige usuario autenticado por defecto; no hay credenciales propias (ni
+  contraseña, ni verificación de email, ni recuperación de contraseña por parte de este sistema).
+- **Audience mapper:** el cliente de la API en Keycloak necesita un mapper que incluya
+  `SocialSchool-Api` en el claim `aud`; sin él, la API rechaza todos los tokens.
 - **Primer acceso:** tras autenticarse, el usuario debe completar los datos de su perfil y **elegir el
   tipo de cuenta** (deportista o escuela).
 - **Campos del deportista:** nombre, apellidos, email, **fecha de nacimiento** (la edad se muestra
@@ -350,8 +354,8 @@ de **email y push se abordan más adelante** (ver §15).
 
 | Integración | Uso | Estado |
 |---|---|---|
-| **Google** (OAuth) | Autenticación del usuario. | En alcance. |
-| **Facebook** (OAuth) | Autenticación del usuario. | En alcance. |
+| **Keycloak** | Proveedor de identidad de la API: emite los access tokens que la API valida (autoridad y audiencia). | En alcance. |
+| **Google** | Inicio de sesión social del usuario, **federado dentro de Keycloak**. | En alcance. |
 | **Azure Blob Storage** | Almacenamiento de imágenes y vídeos. | En alcance. |
 | **Worker de medios** | Procesa imágenes y vídeos a distintos formatos. Es un **componente independiente**, disparado por un *trigger* al detectar que ha entrado una imagen. | **Fuera del alcance de este backend**; se documenta como dependencia. |
 | **Notificaciones por email** | Canal de notificación. | **Pospuesto.** Proveedor sin decidir: Azure Communication Services o FCM/APNs. |
@@ -382,8 +386,8 @@ de **email y push se abordan más adelante** (ver §15).
 
 ## 13. Alcance del MVP
 
-1. Cuentas con **Google/Facebook**, perfil de deportista y de escuela, **nick único**, foto,
-   ubicación, biografía y deportes.
+1. Cuentas con **Keycloak** (Google federado dentro de Keycloak), perfil de deportista y de escuela,
+   **nick único**, foto, ubicación, biografía y deportes.
 2. **Alta de escuela con validación pendiente** (manual, por el técnico).
 3. **Catálogo** de deportes y maniobras (mantenido por el técnico).
 4. **Maniobras declaradas** y **puntuaciones 1-5** con media y detalle por autor; autopuntuación;
@@ -449,3 +453,8 @@ este documento depende de una decisión inventada.
 10. **Deporte de la escuela:** se ha definido que una escuela tiene **un** deporte, pero no si ese
     deporte puede **cambiarse** una vez creada la cuenta (y qué ocurriría con sus publicaciones, que
     se asocian a su deporte).
+11. **Facebook:** la última decisión sobre identidad menciona **solo Google** federado en Keycloak
+    (§4 y §11). Queda por confirmar si Facebook sigue en el alcance o se descarta.
+12. **Identidad frente a las cuentas de negocio:** la cuenta de negocio (`Users`) se crea en el primer
+    acceso a partir del `sub` del token, pero no se ha decidido qué pasa si un mismo `sub` cambia de
+    correo, ni cómo se vincula si en el futuro conviven varios proveedores federados.
