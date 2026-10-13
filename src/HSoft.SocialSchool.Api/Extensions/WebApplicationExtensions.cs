@@ -20,7 +20,12 @@
                 context.Request.EnableBuffering();
                 await next();
             });
-            app.UseHttpsRedirection();
+
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }            
+
             app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
