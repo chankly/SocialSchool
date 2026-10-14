@@ -1,0 +1,8 @@
+# Binarios de proveedores y estado: nunca se versionan.
+# El fichero .terraform.lock.hcl sí se versiona, porque fija las versiones de los proveedores.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+.terraform.tfstate.lock.info

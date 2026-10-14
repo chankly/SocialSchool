@@ -1,0 +1,1 @@
+Crear estructura con terraform para crear la infrastructura en la plataforma de azure. La infrastructura está separada por modulos (resource-groups, container-registry para un azure container registry, container-apps para las diferentes azure container apps por cada servicio, container-environments para el conainer app environment y para el log_analytics_workspace)

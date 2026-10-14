@@ -8,7 +8,10 @@
       "Bash(openspec *)",
       "Bash(findstr *)",
       "Bash(move *)",
-      "Skill(openspec-explore)"
+      "Skill(openspec-explore)",
+      "Bash(curl *)",
+      "Bash(terraform *)",
+      "Bash(\"c:\\tools\\terraform_1.16.5\\terraform.exe\" *)"
     ]
   },
   "$version": 4
