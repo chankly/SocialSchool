@@ -11,7 +11,13 @@
       "Skill(openspec-explore)",
       "Bash(curl *)",
       "Bash(terraform *)",
-      "Bash(\"c:\\tools\\terraform_1.16.5\\terraform.exe\" *)"
+      "Bash(\"c:\\tools\\terraform_1.16.5\\terraform.exe\" *)",
+      "Read(E:\\Downloads\\AzureSample\\src\\FirstApi\\devops/**)",
+      "Bash(python *)",
+      "Bash(py *)",
+      "Bash(pwsh *)",
+      "Bash(ruby *)",
+      "Bash(git checkout *)"
     ]
   },
   "$version": 4

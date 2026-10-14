@@ -107,6 +107,14 @@ resource "azurerm_container_app" "keycloak" {
   }
 
   lifecycle {
-    ignore_changes = [template[0].container[0].image]
+    # La pipeline es dueña de la imagen Y de la forma de arrancar el contenedor: la imagen de Phase Two
+    # arranca en modo desarrollo por defecto, así que la pipeline fija también el comando y los
+    # argumentos. Si Terraform no los ignorase, el siguiente apply los borraría y Keycloak volvería al
+    # modo desarrollo sin que nadie lo notase.
+    ignore_changes = [
+      template[0].container[0].image,
+      template[0].container[0].command,
+      template[0].container[0].args,
+    ]
   }
 }

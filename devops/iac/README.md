@@ -36,11 +36,11 @@ Terraform no puede crear el sitio donde guarda su propio estado, así que este p
 contenedor **por entorno**.
 
 ```bash
-az group create --name socialschool-rg-tfstate --location westeurope
+az group create --name hsoft-rg --location westeurope
 
 az storage account create \
-  --name socialschooltfstate \
-  --resource-group socialschool-rg-tfstate \
+  --name hsoftcontainer \
+  --resource-group hsoft-rg \
   --location westeurope \
   --sku Standard_LRS \
   --min-tls-version TLS1_2 \
@@ -48,24 +48,21 @@ az storage account create \
 
 for entorno in develop qa production; do
   az storage container create \
-    --name "socialschool-deploy-${entorno}" \
-    --account-name socialschooltfstate \
+    --name "socialschool-terraform-${entorno}" \
+    --account-name hsoftcontainer \
     --auth-mode login
 done
 ```
 
 ## 2. Inicializar
 
-El bloque `backend` está **vacío a propósito**: Terraform no admite variables ahí, y el contenedor
-depende del entorno, así que los valores entran por `-backend-config`.
+El bloque `backend` lleva el grupo, la cuenta y la clave, pero **no el contenedor**: Terraform no admite
+variables ahí y el contenedor depende del entorno, así que ese valor entra por `-backend-config`.
 
 ```bash
 cd devops/iac
 terraform init -input=false \
-  -backend-config="resource_group_name=socialschool-rg-tfstate" \
-  -backend-config="storage_account_name=socialschooltfstate" \
-  -backend-config="container_name=socialschool-deploy-develop" \
-  -backend-config="key=terraform.tfstate"
+  -backend-config="container_name=socialschool-terraform-develop"
 ```
 
 Para trabajar **sin Azure y sin estado** (lo que se usa para revisar sintaxis):
@@ -103,9 +100,9 @@ Los repositorios del registro **no** son un recurso de Azure: aparecen al empuja
 
 | Recurso | Patrón | Ejemplo (`develop`) |
 |---|---|---|
-| Grupo de recursos del estado | `socialschool-rg-tfstate` | igual |
-| Storage account del estado | `socialschooltfstate` | igual |
-| Contenedor del estado | `socialschool-deploy-<entorno>` | `socialschool-deploy-develop` |
+| Grupo de recursos del estado | `hsoft-rg` | igual |
+| Storage account del estado | `hsoftcontainer` | igual |
+| Contenedor del estado | `socialschool-terraform-<entorno>` | `socialschool-terraform-develop` |
 | Grupo de recursos del entorno | `socialschool-rg-<entorno>` | `socialschool-rg-develop` |
 | Registro | `socialschoolacr<entorno>` | `socialschoolacrdevelop` |
 | Key Vault | `socialschool-kv-<entorno>` | `socialschool-kv-develop` |
@@ -133,6 +130,11 @@ Container Apps; si el prefijo creciera, esa aplicación tendría que acortar el 
   imagen es el **modo desarrollo**.
 - Las variables `KC_*` de Keycloak ya están puestas (base de datos, proxy, hostname). Son inofensivas
   en la imagen de ejemplo.
+- **La imagen de Keycloak la gobierna la pipeline**, no Terraform: un workflow manual la apunta a la
+  imagen pública de Phase Two (ver `devops/README.md`), y por eso Terraform **ignora** la imagen, el
+  comando y los argumentos de esa aplicación. El `image` que aparece aquí es solo el **valor inicial**,
+  y **recrear la aplicación la devuelve a la imagen de ejemplo**. Solo Keycloak está en esa situación:
+  la de la API sigue siendo responsabilidad de Terraform hasta que exista su pipeline.
 - **La API todavía no puede hablar con la base de datos**: su capa de Persistencia usa SQL Server. Eso
   llega con el cambio pendiente `switch-to-mysql`.
 
