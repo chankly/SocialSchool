@@ -81,10 +81,20 @@ Está previsto estudiarlo en el futuro como un tipo de usuario propio con panel 
 
 ## 4. Cuenta, registro y sesión
 
-- **Autenticación: mediante Google o Facebook.** No hay credenciales propias (ni contraseña, ni
-  verificación de email, ni recuperación de contraseña por parte de este sistema).
-- **Primer acceso:** tras autenticarse, el usuario debe completar los datos de su perfil y **elegir el
-  tipo de cuenta** (deportista o escuela).
+- **Autenticación: mediante Keycloak**, que federa Google dentro de Keycloak. La API solo acepta
+  **access tokens JWT emitidos por Keycloak** (valida autoridad, firma, expiración y audiencia
+  `SocialSchool-Api`) y exige usuario autenticado por defecto; no hay credenciales propias (ni
+  contraseña, ni verificación de email, ni recuperación de contraseña por parte de este sistema).
+- **Audience mapper:** el cliente de la API en Keycloak necesita un mapper que incluya
+  `SocialSchool-Api` en el claim `aud`; sin él, la API rechaza todos los tokens.
+- **Registro: lo hace Keycloak.** El alta —identidad y datos del perfil— se completa en el formulario
+  de Keycloak, **no** en nuestra aplicación: el backend **no** expone endpoints para rellenar el
+  perfil. Cuando alguien se registra, Keycloak **lanza un evento de integración** y el backend
+  materializa la cuenta (`User` + `Athlete`/`School`) en su propia base de datos.
+- **El perfil vive en los dos sitios**: Keycloak lo captura y nuestro dominio lo guarda. Queda por
+  decidir quién manda si el perfil se edita después en Keycloak (ver §15).
+- **Consecuencia:** un usuario puede estar **autenticado sin cuenta de negocio** mientras el evento no
+  se haya procesado. La API debe aceptarlo igualmente: autenticarse no exige tener cuenta.
 - **Campos del deportista:** nombre, apellidos, email, **fecha de nacimiento** (la edad se muestra
   calculada a partir de ella), país, ciudad, foto de perfil, pequeña biografía y **deportes que
   practica** (selección múltiple —se marcan los deseados, a modo de *checkbox*— sobre el catálogo).
@@ -350,8 +360,10 @@ de **email y push se abordan más adelante** (ver §15).
 
 | Integración | Uso | Estado |
 |---|---|---|
-| **Google** (OAuth) | Autenticación del usuario. | En alcance. |
-| **Facebook** (OAuth) | Autenticación del usuario. | En alcance. |
+| **Keycloak** | Proveedor de identidad de la API: emite los access tokens que la API valida (autoridad y audiencia). | En alcance. |
+| **Google** | Inicio de sesión social del usuario, **federado dentro de Keycloak**. | En alcance. |
+| **Keycloak Events** | Evento de integración que avisa al backend cuando un usuario se registra, para materializar su cuenta. | Pendiente de diseñar (ver §15.13 y §15.14). |
+| **Keycloak Admin API** | Consulta de los datos del usuario que el evento no transporte (atributos personalizados). | Pendiente de diseñar (ver §15.13). |
 | **Azure Blob Storage** | Almacenamiento de imágenes y vídeos. | En alcance. |
 | **Worker de medios** | Procesa imágenes y vídeos a distintos formatos. Es un **componente independiente**, disparado por un *trigger* al detectar que ha entrado una imagen. | **Fuera del alcance de este backend**; se documenta como dependencia. |
 | **Notificaciones por email** | Canal de notificación. | **Pospuesto.** Proveedor sin decidir: Azure Communication Services o FCM/APNs. |
@@ -382,8 +394,9 @@ de **email y push se abordan más adelante** (ver §15).
 
 ## 13. Alcance del MVP
 
-1. Cuentas con **Google/Facebook**, perfil de deportista y de escuela, **nick único**, foto,
-   ubicación, biografía y deportes.
+1. Cuentas aprovisionadas desde el **registro en Keycloak** (Google federado dentro de Keycloak) por
+   **evento de integración**: perfil de deportista y de escuela, **nick único**, foto, ubicación,
+   biografía y deportes. **No** hay formulario de perfil en nuestra aplicación.
 2. **Alta de escuela con validación pendiente** (manual, por el técnico).
 3. **Catálogo** de deportes y maniobras (mantenido por el técnico).
 4. **Maniobras declaradas** y **puntuaciones 1-5** con media y detalle por autor; autopuntuación;
@@ -449,3 +462,22 @@ este documento depende de una decisión inventada.
 10. **Deporte de la escuela:** se ha definido que una escuela tiene **un** deporte, pero no si ese
     deporte puede **cambiarse** una vez creada la cuenta (y qué ocurriría con sus publicaciones, que
     se asocian a su deporte).
+11. **Facebook:** la última decisión sobre identidad menciona **solo Google** federado en Keycloak
+    (§4 y §11). Queda por confirmar si Facebook sigue en el alcance o se descarta.
+12. **Identidad frente a las cuentas de negocio:** la cuenta de negocio (`Users`) se materializa a
+    partir del evento de registro de Keycloak, pero no se ha decidido qué pasa si un mismo `sub`
+    cambia de correo, ni cómo se vincula si en el futuro conviven varios proveedores federados.
+13. **Contenido del evento de registro:** el payload por defecto de Keycloak **no** incluye los
+    atributos personalizados del perfil. Hay que decidir entre un *Event Listener SPI* propio que lo
+    enriquezca, un proveedor de webhooks de terceros, o consultar la Admin API al recibirlo. Depende
+    de la versión y de la configuración del realm, así que debe comprobarse antes de diseñar nada.
+14. **Quién valida el nick:** la unicidad del nick y la existencia del deporte dependen de nuestra
+    base de datos, y Keycloak no puede comprobarlas en su formulario. Un registro puede triunfar en
+    Keycloak y **fallar al materializar la cuenta**. Falta decidir qué ocurre entonces (reintento,
+    aviso al usuario, bloqueo) y cómo se le pide otro nick.
+15. **Fuente de verdad del perfil:** el perfil queda duplicado en Keycloak y en nuestro dominio.
+    Falta decidir si una edición posterior en Keycloak pisa el dato local, o si nuestro dominio manda
+    y Keycloak solo captura en el alta.
+16. **Atributos personalizados en Keycloak:** hay que declararlos (User Profile), añadirlos al flujo
+    de registro y, si deben viajar en el token, a los mappers. Es trabajo de configuración en
+    Keycloak, no en el backend.
