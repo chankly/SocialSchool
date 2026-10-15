@@ -11,47 +11,52 @@ namespace HSoft.SocialSchool.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AlterDatabase()
+                .Annotation("MySQL:Charset", "utf8mb4");
+
             migrationBuilder.CreateTable(
                 name: "Sports",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Sports", x => x.Id);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: false),
-                    Nickname = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Email = table.Column<string>(type: "varchar(320)", maxLength: 320, nullable: false),
+                    Nickname = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
                     AccountType = table.Column<int>(type: "int", nullable: false),
                     AccountStatus = table.Column<int>(type: "int", nullable: false),
-                    IdentityProvider = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    ExternalIdentityId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    PreferredLanguage = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    IdentityProvider = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    ExternalIdentityId = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    PreferredLanguage = table.Column<string>(type: "varchar(10)", maxLength: 10, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Skills",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    SportId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -62,20 +67,21 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Sports",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Athletes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    LastName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    FirstName = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    LastName = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
-                    Country = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ProfilePictureUrl = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    Biography = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                    Country = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    City = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    ProfilePictureUrl = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: true),
+                    Biography = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -86,16 +92,17 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Blocks",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BlockerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BlockedId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BlockedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    BlockerId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    BlockedId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    BlockedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -112,18 +119,19 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "FriendRequests",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RequesterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReceiverId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    RequesterId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    ReceiverId = table.Column<Guid>(type: "char(36)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ResolvedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    RequestedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ResolvedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -140,16 +148,17 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Friendships",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserAId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserBId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    UserAId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    UserBId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -166,16 +175,17 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "NotificationPreferences",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false),
                     Channel = table.Column<int>(type: "int", nullable: false),
-                    IsEnabled = table.Column<bool>(type: "bit", nullable: false)
+                    IsEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -186,19 +196,20 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Notifications",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RecipientId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    RecipientId = table.Column<Guid>(type: "char(36)", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
-                    ContentReference = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    ContentReference = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true),
                     Channel = table.Column<int>(type: "int", nullable: false),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    IsRead = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -209,19 +220,20 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Posts",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AuthorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    AuthorId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    SportId = table.Column<Guid>(type: "char(36)", nullable: false),
                     MediaType = table.Column<int>(type: "int", nullable: false),
-                    MediaUrl = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: false),
-                    Caption = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    MediaUrl = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: false),
+                    Caption = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true),
+                    PublishedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -238,20 +250,21 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Reports",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
                     ContentType = table.Column<int>(type: "int", nullable: false),
-                    ContentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReporterId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ContentId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    ReporterId = table.Column<Guid>(type: "char(36)", nullable: false),
                     Category = table.Column<int>(type: "int", nullable: false),
-                    FreeText = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    FreeText = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -262,22 +275,23 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Schools",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    LogoUrl = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true),
-                    SportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    Country = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    ContactEmail = table.Column<string>(type: "nvarchar(320)", maxLength: 320, nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
-                    Website = table.Column<string>(type: "nvarchar(2048)", maxLength: 2048, nullable: true)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    LogoUrl = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: true),
+                    SportId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Description = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true),
+                    Country = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    City = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false),
+                    ContactEmail = table.Column<string>(type: "varchar(320)", maxLength: 320, nullable: true),
+                    Phone = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: true),
+                    Website = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -294,17 +308,18 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AthleteSkills",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AthleteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SkillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    IsEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    DeclaredAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    AthleteId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    SkillId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    DeclaredAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -321,14 +336,15 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Skills",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "AthleteSports",
                 columns: table => new
                 {
-                    AthleteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SportId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    AthleteId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    SportId = table.Column<Guid>(type: "char(36)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -345,17 +361,18 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Sports",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Comments",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PostId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AuthorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Text = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    PostId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    AuthorId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Text = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -372,16 +389,17 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Likes",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    PostId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    PostId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    UserId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -398,19 +416,20 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "SchoolAttendances",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AthleteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SchoolId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    InitiatedById = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    AthleteId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    SchoolId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    InitiatedById = table.Column<Guid>(type: "char(36)", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
-                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ResolvedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    RequestedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ResolvedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -433,18 +452,19 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "SchoolServices",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    SchoolId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    SchoolId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "varchar(1000)", maxLength: 1000, nullable: true),
                     Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false)
+                    Currency = table.Column<string>(type: "varchar(3)", maxLength: 3, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -455,18 +475,19 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Schools",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Ratings",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AthleteSkillId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AuthorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false),
+                    AthleteSkillId = table.Column<Guid>(type: "char(36)", nullable: false),
+                    AuthorId = table.Column<Guid>(type: "char(36)", nullable: false),
                     Value = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -483,7 +504,8 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateIndex(
                 name: "IX_AthleteSkills_AthleteId_SkillId",
@@ -600,8 +622,7 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                 name: "IX_SchoolAttendances_AthleteId_SchoolId",
                 table: "SchoolAttendances",
                 columns: new[] { "AthleteId", "SchoolId" },
-                unique: true,
-                filter: "[Status] IN (0, 1)");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_SchoolAttendances_InitiatedById",

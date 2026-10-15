@@ -135,8 +135,9 @@ Container Apps; si el prefijo creciera, esa aplicación tendría que acortar el 
   comando y los argumentos de esa aplicación. El `image` que aparece aquí es solo el **valor inicial**,
   y **recrear la aplicación la devuelve a la imagen de ejemplo**. Solo Keycloak está en esa situación:
   la de la API sigue siendo responsabilidad de Terraform hasta que exista su pipeline.
-- **La API todavía no puede hablar con la base de datos**: su capa de Persistencia usa SQL Server. Eso
-  llega con el cambio pendiente `switch-to-mysql`.
+- **La API ya habla MySQL**: su capa de Persistencia usa el proveedor de Oracle para MySQL y la
+  migración está regenerada contra ese motor, así que la base `api` del servidor del entorno es la que
+  espera encontrar.
 
 ## 7. Avisos que conviene no redescubrir
 

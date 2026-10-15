@@ -308,7 +308,9 @@ Relación entre un deportista y una escuela que acredita que el deportista ha as
 ### Reglas de negocio
 - Puede **iniciarlo cualquiera de las dos partes**: la escuela añade al deportista, o el deportista
   declara que ha asistido a la escuela.
-- La otra parte **acepta o rechaza**; el **rechazo es silencioso** y la propuesta puede **reenviarse**.
+- La otra parte **acepta o rechaza**; el **rechazo es silencioso** y la propuesta puede **reenviarse**:
+  volver a solicitar devuelve **la misma fila** a pendiente, no inserta otra, así que **no se conserva
+  histórico** de los intentos anteriores.
 - El deportista puede declarar asistencia a una escuela **aunque no practique el deporte de esa
   escuela**.
 - Mientras está **aceptado**, la escuela ve el perfil del deportista **como si fueran amigos** y puede
@@ -317,7 +319,8 @@ Relación entre un deportista y una escuela que acredita que el deportista ha as
   el deportista.
 - Cualquiera de las dos partes puede **retirar** el vínculo; al retirarlo, la asistencia desaparece, el
   deportista sale de la lista de asistentes y **se borran las puntuaciones** que esa escuela había dado.
-- No puede existir más de un vínculo activo para el mismo par deportista-escuela.
+- **Una sola fila por par** deportista-escuela: la unicidad no distingue estados, de modo que volver a
+  solicitar reutiliza la fila en lugar de crear otra.
 - El deportista ve sus vínculos no aceptados como **"pendiente de validación"**; los demás usuarios
   solo ven los **aceptados**.
 - La **amistad** y la **asistencia** son listas independientes, aunque puedan coincidir.

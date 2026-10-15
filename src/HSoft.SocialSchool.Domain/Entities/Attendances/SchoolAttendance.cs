@@ -29,10 +29,7 @@ namespace HSoft.SocialSchool.Domain.Entities.Attendances
             if (schoolId == Guid.Empty)
                 throw new ArgumentException("School is required.", nameof(schoolId));
 
-            if (initiatedById != athleteId && initiatedById != schoolId)
-                throw new ArgumentException(
-                    "The attendance link must be started by the athlete or the school.",
-                    nameof(initiatedById));
+            EnsureStartedByAParty(athleteId, schoolId, initiatedById);
 
             return new SchoolAttendance(id)
             {
@@ -42,6 +39,25 @@ namespace HSoft.SocialSchool.Domain.Entities.Attendances
                 Status = AttendanceStatus.Pending,
                 RequestedAt = DateTime.UtcNow
             };
+        }
+
+        /// <summary>
+        /// Vuelve a solicitar un vínculo rechazado o retirado. Es la <b>misma fila</b>: cambia quién lo
+        /// inicia, vuelve a pendiente y se limpia la fecha de resolución. Como solo hay una fila por par,
+        /// no se conserva histórico de los intentos anteriores.
+        /// </summary>
+        public void RequestAgain(Guid initiatedById)
+        {
+            if (Status is not (AttendanceStatus.Rejected or AttendanceStatus.Withdrawn))
+                throw new InvalidOperationException(
+                    "Only a rejected or withdrawn attendance link can be requested again.");
+
+            EnsureStartedByAParty(AthleteId, SchoolId, initiatedById);
+
+            InitiatedById = initiatedById;
+            Status = AttendanceStatus.Pending;
+            RequestedAt = DateTime.UtcNow;
+            ResolvedAt = null;
         }
 
         /// <summary>Confirma la asistencia: habilita la visibilidad del perfil y el derecho a puntuar.</summary>
@@ -79,6 +95,14 @@ namespace HSoft.SocialSchool.Domain.Entities.Attendances
         {
             if (Status != AttendanceStatus.Pending)
                 throw new InvalidOperationException("Only a pending attendance link can be resolved.");
+        }
+
+        private static void EnsureStartedByAParty(Guid athleteId, Guid schoolId, Guid initiatedById)
+        {
+            if (initiatedById != athleteId && initiatedById != schoolId)
+                throw new ArgumentException(
+                    "The attendance link must be started by the athlete or the school.",
+                    nameof(initiatedById));
         }
     }
 }
