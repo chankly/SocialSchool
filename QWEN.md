@@ -421,7 +421,7 @@ gana):
 5. User Secrets (`AddUserSecrets<Program>`).
 6. Variables de entorno.
 
-Claves consumidas por el código: `ConnectionStrings:MyCompany` (SQL Server), `Keycloak:Authority` y
+Claves consumidas por el código: `ConnectionStrings:MyCompany` (MySQL), `Keycloak:Authority` y
 `Keycloak:Audience` (identidad), `AuditingEnabled`, y la sección `Serilog`.
 
 ---
@@ -468,7 +468,11 @@ No se usan excepciones de dominio personalizadas: el dominio lanza `ArgumentExce
 
 ## Persistencia
 
-- **Proveedor**: SQL Server vía `Microsoft.EntityFrameworkCore.SqlServer` (10.0.9).
+- **Proveedor**: MySQL vía `MySql.EntityFrameworkCore` 10.0.9 (el de Oracle), con `UseMySQL`. La
+  migración `InitialCreate` está regenerada contra ese motor: los `Guid` se guardan como `char(36)`,
+  los `DateTime` como `datetime(6)`, y el índice único del vínculo de asistencia es de **dos campos y
+  sin filtro** (una sola fila por par). La colación es `utf8mb4_0900_ai_ci`, **insensible a
+  mayúsculas**, así que la unicidad del nick no distingue mayúsculas.
 - **Registro**: `AddDbContextPool<MyCompanyDbContext>` con la cadena `ConnectionStrings:MyCompany`,
   `MigrationsAssembly` apuntando al propio ensamblado de Persistence y `EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: 5s)`.
 - **Configuraciones**: clases `IEntityTypeConfiguration<T>` en `Configurations/`, aplicadas
@@ -735,7 +739,7 @@ los behaviors de pipeline, el `DbContext` con la publicación de eventos en dos 
 
 - **Configuración de ejemplo inválida**: `appsettings.json` tiene
   `ConnectionStrings:MyCompany = "MyCompany"`, que no es una cadena de conexión válida. Hay que
-  sustituirla para poder ejecutar la API contra SQL Server.
+  sustituirla para poder ejecutar la API contra MySQL.
 - **`security.json` no se carga**: la línea que lo añadía está comentada. Las claves que espera el
   código (`Keycloak:Authority` y `Keycloak:Audience`) deben venir de User Secrets o de variables de
   entorno; `appsettings.json` solo lleva valores de ejemplo.

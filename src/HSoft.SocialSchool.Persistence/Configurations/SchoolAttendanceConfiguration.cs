@@ -31,11 +31,10 @@ namespace HSoft.SocialSchool.Persistence.Configurations
                 .HasForeignKey(attendance => attendance.InitiatedById)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Solo puede existir un vínculo activo (Pending, Accepted) por par. El filtro deja convivir como
-            // histórico los rechazos y las retiradas, porque el dominio admite volver a solicitarla.
+            // Una fila por par deportista-escuela: volver a solicitar no inserta otra fila, devuelve esa a
+            // pendiente. Por eso la unicidad se expresa con dos campos y sin filtro del motor.
             builder.HasIndex(attendance => new { attendance.AthleteId, attendance.SchoolId })
                 .IsUnique()
-                .HasFilter("[Status] IN (0, 1)")
                 .HasDatabaseName("IX_SchoolAttendances_AthleteId_SchoolId");
         }
     }
