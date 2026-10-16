@@ -12,13 +12,17 @@ devops/
 
 | Pipeline | Fichero | Qué hace | Parámetros |
 |---|---|---|---|
-| **API** | `.github/workflows/api-deploy.yml` | Construye la imagen de la API con el `Dockerfile` de la raíz, la publica en el registro del entorno y apunta la Container App de la API a esa imagen. | `environment` (`develop` \| `qa` \| `production`) |
+| **API** | `.github/workflows/api-deploy.yml` | Construye la imagen de la API con el `Dockerfile` del proyecto y la publica en el registro del entorno; según el modo, además apunta la Container App de la API a esa imagen. | `environment` (`develop` \| `qa` \| `production`) · `mode` (`Build` \| `BuildAndDeploy`, por defecto `Build`) |
 | **Keycloak** | `.github/workflows/keycloak-deploy.yml` | Apunta la Container App de Keycloak del entorno elegido a la imagen pública de Phase Two y la arranca en modo producción. | `environment` (`develop` \| `qa` \| `production`) |
 
 Todas se lanzan **a mano** desde GitHub: `Actions` → la pipeline → `Run workflow`.
 
 ### La pipeline de la API en detalle
 
+- **Dos modos, y el de por defecto no despliega.** `Build` construye la imagen y la publica en el
+  registro; `BuildAndDeploy` hace lo mismo y además apunta la Container App a esa imagen. Por defecto
+  viene `Build`, así que *Run workflow* sin tocar nada deja el entorno como está: desplegar hay que
+  elegirlo a propósito.
 - **Sí construye y publica imágenes.** Es la que llena el registro: cada ejecución publica
   `socialschool-api` con la etiqueta del **sha corto del commit**.
 - **Necesita `AcrPush` además de `Contributor`.** Publicar una imagen es plano de datos, así que

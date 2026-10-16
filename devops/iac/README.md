@@ -94,9 +94,10 @@ ese módulo y el resto después.
 terraform apply -var environment=dv -target=module.container_registry
 ```
 
-Publicar una imagen a mano solo hace falta si no hay pipeline que lo haga (o para una prueba). Ojo:
-**el `Dockerfile` está dentro del proyecto de la API** y el contexto de build es la carpeta `src/`, no
-este directorio.
+Publicar una imagen a mano ya no hace falta ni para eso: la pipeline de la API sabe construir y publicar
+sin tocar el entorno (su `mode=Build`, ver `devops/README.md`). Si aun así se quiere hacer desde aquí,
+ojo: **el `Dockerfile` está dentro del proyecto de la API** y el contexto de build es la carpeta `src/`,
+no este directorio.
 
 ```bash
 # Desde la RAÍZ del repositorio, no desde devops/iac.

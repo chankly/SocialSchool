@@ -1,20 +1,29 @@
 # Pipeline de despliegue de la API.
 #
 # QUÉ HACE
-#   Construye la imagen de la API con el Dockerfile del proyecto, la publica en el Azure Container
-#   Registry del entorno elegido y apunta la Container App de la API a esa imagen. El disparo es
-#   manual: un developer elige el entorno y lo lanza.
+#   Construye la imagen de la API con el Dockerfile del proyecto y la publica en el Azure Container
+#   Registry del entorno elegido. Según el modo, además apunta la Container App de la API a esa imagen.
+#   El disparo es manual: un developer elige el entorno, elige el modo y lo lanza.
+#
+# LOS DOS MODOS (parámetro `mode`)
+#   Build           construye la imagen y la publica en el registro. NO toca la Container App.
+#   BuildAndDeploy  hace exactamente lo mismo y además apunta la Container App a la imagen publicada.
+#
+#   Por defecto viene `Build`, así que pulsar Run workflow sin cambiar nada deja el entorno como está:
+#   desplegar es lo que cambia lo que ve la gente, y por eso hay que elegirlo a propósito. Ojo, los
+#   valores de un `choice` distinguen mayúsculas: son `Build` y `BuildAndDeploy`, tal cual.
 #
 # QUÉ NO HACE
 #   - No ejecuta los tests: construye y publica. Los tests de integración son un paso manual.
+#   - En modo `Build` no toca la Container App: solo deja la imagen en el registro.
 #   - No toca variables de entorno, secretos, ingress ni escala: eso lo gobierna Terraform
-#     (devops/iac), que por eso ignora la imagen de esta aplicación. Aquí solo cambia la imagen.
+#     (devops/iac), que por eso ignora la imagen de esta aplicación.
 #   - No construye ni despliega Keycloak: eso es otra pipeline (`keycloak-deploy.yml`).
 #
 # PERMISO QUE NECESITA LA IDENTIDAD
 #   - AcrPush sobre el registro del entorno: publicar una imagen es plano de datos, así que
 #     Contributor sobre el grupo de recursos NO basta (la pipeline de Keycloak no lo necesita porque
-#     su imagen es pública).
+#     su imagen es pública). Hace falta en los DOS modos, porque los dos publican.
 #   - Contributor sobre el grupo de recursos socialschool-rg-<prefijo>, para actualizar la Container App.
 #   El alta de la federación OIDC está en devops/README.md.
 #
@@ -56,6 +65,14 @@ on:
           - develop
           - qa
           - production
+      mode:
+        description: Construir la imagen solo, o construirla y desplegarla
+        required: true
+        type: choice
+        default: Build
+        options:
+          - Build
+          - BuildAndDeploy
 
 permissions:
   id-token: write # necesario para pedir el token federado
@@ -67,7 +84,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Desplegar la API en ${{ inputs.environment }}
+    name: API en ${{ inputs.environment }} (${{ inputs.mode }})
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
 
@@ -106,6 +123,7 @@ jobs:
       - name: Iniciar sesión en el registro del entorno
         run: az acr login --name "$ACR_NAME"
 
+      # El tronco común: en los dos modos se construye y se publica.
       - name: Construir y publicar la imagen
         run: |
           TAG="${GITHUB_SHA::7}"
@@ -114,17 +132,26 @@ jobs:
           docker build --file "$DOCKERFILE" --tag "$IMAGE" "$BUILD_CONTEXT"
           docker push "$IMAGE"
 
+      # Solo en BuildAndDeploy: en modo Build la aplicación se queda como está.
       - name: Apuntar la Container App a la imagen publicada
+        if: inputs.mode == 'BuildAndDeploy'
         run: |
           az containerapp update \
             --resource-group "socialschool-rg-$ENVIRONMENT_PREFIX" \
             --name "socialschool-api-$ENVIRONMENT_PREFIX" \
             --image "$IMAGE"
 
-      - name: Mostrar la imagen que ha quedado desplegada
+      - name: Imagen desplegada
+        if: inputs.mode == 'BuildAndDeploy'
         run: |
           az containerapp show \
             --resource-group "socialschool-rg-$ENVIRONMENT_PREFIX" \
             --name "socialschool-api-$ENVIRONMENT_PREFIX" \
             --query "properties.template.containers[0].image" \
             --output tsv
+
+      - name: Imagen publicada (sin desplegar)
+        if: inputs.mode == 'Build'
+        run: |
+          echo "Imagen publicada en el registro: $IMAGE"
+          echo "La Container App no se ha tocado: sigue con la imagen que ya tenia."
