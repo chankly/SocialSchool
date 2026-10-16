@@ -17,7 +17,15 @@
       "Bash(py *)",
       "Bash(pwsh *)",
       "Bash(ruby *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(set *)",
+      "Bash(docker *)",
+      "Bash(timeout *)",
+      "Bash(echo.)",
+      "Bash(git config *)",
+      "Bash(git *)",
+      "Bash(echo *)",
+      "Bash(====)"
     ]
   },
   "$version": 4

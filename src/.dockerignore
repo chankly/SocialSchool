@@ -1,0 +1,21 @@
+# Lo que NO tiene que viajar al contexto de build.
+#
+# El contexto es la carpeta src/ entera: la API referencia a Application y Persistence, así que el build
+# necesita las cuatro carpetas de proyecto. El fichero va aquí, en la raíz del contexto, que es donde lo
+# busca Docker y donde lo espera el tooling de contenedores de Visual Studio
+# (Container.targets: $(DockerDefaultContext)\.dockerignore). Uno solo sirve para los Dockerfile de
+# todos los proyectos de src/.
+#
+# Ojo con no excluir ningún .csproj: son justamente lo que se copia.
+
+# Salidas de compilación locales: además de no hacer falta, arrastran rutas absolutas de Windows.
+**/bin/
+**/obj/
+
+# Herramienta local.
+.vs/
+**/*.user
+
+# El propio Dockerfile y este fichero, que no se copian en ninguna etapa.
+**/Dockerfile
+.dockerignore

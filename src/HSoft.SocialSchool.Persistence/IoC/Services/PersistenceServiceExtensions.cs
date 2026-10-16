@@ -8,9 +8,10 @@ namespace HSoft.SocialSchool.Persistence.IoC.Services
     {
         public static void AddDbContextPool(this IServiceCollection services, IConfiguration configuration)
         {
-            var licenserConnectionString = configuration.GetConnectionString("MyCompany");
+            // La cadena la pone la configuración (User Secrets, variables de entorno o el despliegue).
+            var connectionString = configuration.GetConnectionString("MyCompany");
             services.AddDbContextPool<MyCompanyDbContext>(options =>
-            options.UseSqlServer(licenserConnectionString, opt =>
+            options.UseMySQL(connectionString!, opt =>
             {
                 opt.MigrationsAssembly(typeof(MyCompanyDbContext).Assembly.GetName().Name);
                 opt.EnableRetryOnFailure(

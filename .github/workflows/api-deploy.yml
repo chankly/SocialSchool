@@ -1,0 +1,157 @@
+# Pipeline de despliegue de la API.
+#
+# QUÉ HACE
+#   Construye la imagen de la API con el Dockerfile del proyecto y la publica en el Azure Container
+#   Registry del entorno elegido. Según el modo, además apunta la Container App de la API a esa imagen.
+#   El disparo es manual: un developer elige el entorno, elige el modo y lo lanza.
+#
+# LOS DOS MODOS (parámetro `mode`)
+#   Build           construye la imagen y la publica en el registro. NO toca la Container App.
+#   BuildAndDeploy  hace exactamente lo mismo y además apunta la Container App a la imagen publicada.
+#
+#   Por defecto viene `Build`, así que pulsar Run workflow sin cambiar nada deja el entorno como está:
+#   desplegar es lo que cambia lo que ve la gente, y por eso hay que elegirlo a propósito. Ojo, los
+#   valores de un `choice` distinguen mayúsculas: son `Build` y `BuildAndDeploy`, tal cual.
+#
+# QUÉ NO HACE
+#   - No ejecuta los tests: construye y publica. Los tests de integración son un paso manual.
+#   - En modo `Build` no toca la Container App: solo deja la imagen en el registro.
+#   - No toca variables de entorno, secretos, ingress ni escala: eso lo gobierna Terraform
+#     (devops/iac), que por eso ignora la imagen de esta aplicación.
+#   - No construye ni despliega Keycloak: eso es otra pipeline (`keycloak-deploy.yml`).
+#
+# PERMISO QUE NECESITA LA IDENTIDAD
+#   - AcrPush sobre el registro del entorno: publicar una imagen es plano de datos, así que
+#     Contributor sobre el grupo de recursos NO basta (la pipeline de Keycloak no lo necesita porque
+#     su imagen es pública). Hace falta en los DOS modos, porque los dos publican.
+#   - Contributor sobre el grupo de recursos socialschool-rg-<prefijo>, para actualizar la Container App.
+#   El alta de la federación OIDC está en devops/README.md.
+#
+# DÓNDE ESTÁ EL DOCKERFILE
+#   Dentro del proyecto (src/HSoft.SocialSchool.Api/Dockerfile) y el contexto de build es **src/**, que
+#   es lo que usa el tooling de contenedores de Visual Studio (DockerDefaultContext = ..) y lo que el
+#   build necesita, porque la API referencia a los otros tres proyectos de src/. El `.dockerignore`
+#   vive en src/, la raíz del contexto, y sirve para todos los proyectos que se construyan desde ahí.
+#   Los dos valores están en el `env` del job (DOCKERFILE y BUILD_CONTEXT): al añadir otro
+#   microservicio, lo que cambia son esas dos líneas.
+#
+# VARIABLES DEL REPOSITORIO QUE HAY QUE DEFINIR
+#   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID  (identificadores, no credenciales)
+#   ENVIRONMENT_PREFIX  <- una POR ENVIRONMENT de GitHub, con el prefijo corto del entorno:
+#                          develop -> dv | qa -> qa | production -> pr
+#
+# CONVENCIÓN DE NOMBRES (la misma que Terraform; ver devops/iac/README.md)
+#   grupo de recursos   socialschool-rg-<prefijo>
+#   registro            socialschoolacr<prefijo>
+#   Container App       socialschool-api-<prefijo>
+#   imagen              socialschoolacr<prefijo>.azurecr.io/socialschool-api:<sha-corto>
+#
+# POR QUÉ LA ETIQUETA ES EL SHA CORTO DEL COMMIT
+#   Cada ejecución publica una etiqueta distinta, así que Container Apps siempre crea revisión nueva.
+#   Con una etiqueta fija por entorno la cadena de imagen podría repetirse entre dos ejecuciones y el
+#   despliegue podría no aplicarse, quedándose la revisión anterior sin que nada lo delate.
+
+name: API
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Entorno sobre el que desplegar la API
+        required: true
+        type: choice
+        default: develop
+        options:
+          - develop
+          - qa
+          - production
+      mode:
+        description: Construir la imagen solo, o construirla y desplegarla
+        required: true
+        type: choice
+        default: Build
+        options:
+          - Build
+          - BuildAndDeploy
+
+permissions:
+  id-token: write # necesario para pedir el token federado
+  contents: read
+
+# Dos ejecuciones sobre el mismo entorno a la vez se pisarían.
+concurrency:
+  group: api-${{ inputs.environment }}
+
+jobs:
+  deploy:
+    name: API en ${{ inputs.environment }} (${{ inputs.mode }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    env:
+      ENVIRONMENT_PREFIX: ${{ vars.ENVIRONMENT_PREFIX }}
+      ACR_NAME: socialschoolacr${{ vars.ENVIRONMENT_PREFIX }}
+      IMAGE_NAME: socialschool-api
+      # Al añadir otro microservicio, lo que cambia es esto: su Dockerfile y su contexto.
+      DOCKERFILE: src/HSoft.SocialSchool.Api/Dockerfile
+      BUILD_CONTEXT: src
+
+    steps:
+      # Primero de todo, y antes de tocar Azure: sin esta variable los nombres saldrían como
+      # "socialschool-rg-" y el fallo aparecería más tarde como un error de `az` difícil de leer.
+      - name: Comprobar que el environment define ENVIRONMENT_PREFIX
+        run: |
+          if [ -z "$ENVIRONMENT_PREFIX" ]; then
+            echo "::error::Falta la variable ENVIRONMENT_PREFIX en el environment '${{ inputs.environment }}'."
+            echo "Se define en GitHub: Settings -> Secrets and variables -> Actions -> Variables,"
+            echo "dentro del environment correspondiente (pestana Environment variables)."
+            echo "Valores: develop -> dv, qa -> qa, production -> pr."
+            exit 1
+          fi
+          echo "Prefijo del entorno: $ENVIRONMENT_PREFIX"
+
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en Azure (OIDC, sin secretos)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Iniciar sesión en el registro del entorno
+        run: az acr login --name "$ACR_NAME"
+
+      # El tronco común: en los dos modos se construye y se publica.
+      - name: Construir y publicar la imagen
+        run: |
+          TAG="${GITHUB_SHA::7}"
+          IMAGE="$ACR_NAME.azurecr.io/$IMAGE_NAME:$TAG"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          docker build --file "$DOCKERFILE" --tag "$IMAGE" "$BUILD_CONTEXT"
+          docker push "$IMAGE"
+
+      # Solo en BuildAndDeploy: en modo Build la aplicación se queda como está.
+      - name: Apuntar la Container App a la imagen publicada
+        if: inputs.mode == 'BuildAndDeploy'
+        run: |
+          az containerapp update \
+            --resource-group "socialschool-rg-$ENVIRONMENT_PREFIX" \
+            --name "socialschool-api-$ENVIRONMENT_PREFIX" \
+            --image "$IMAGE"
+
+      - name: Imagen desplegada
+        if: inputs.mode == 'BuildAndDeploy'
+        run: |
+          az containerapp show \
+            --resource-group "socialschool-rg-$ENVIRONMENT_PREFIX" \
+            --name "socialschool-api-$ENVIRONMENT_PREFIX" \
+            --query "properties.template.containers[0].image" \
+            --output tsv
+
+      - name: Imagen publicada (sin desplegar)
+        if: inputs.mode == 'Build'
+        run: |
+          echo "Imagen publicada en el registro: $IMAGE"
+          echo "La Container App no se ha tocado: sigue con la imagen que ya tenia."
