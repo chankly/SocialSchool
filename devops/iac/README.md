@@ -1,7 +1,8 @@
 # Infraestructura de Azure con Terraform
 
 Declara en código la infraestructura de SocialSchool en Azure. **Un solo *root*** y **el entorno como
-variable**: se despliega todo para un entorno pasando `-var environment=<entorno>`.
+variable**: se despliega todo para un entorno pasando `-var environment=<entorno>`, donde `<entorno>` es
+el **prefijo corto** del entorno: **`dv`**, **`qa`** o **`pr`**.
 
 ```
 devops/iac/
@@ -33,7 +34,7 @@ devops/iac/
 ## 1. Crear el almacenamiento del estado (una sola vez por suscripción)
 
 Terraform no puede crear el sitio donde guarda su propio estado, así que este paso es manual. Hay un
-contenedor **por entorno**.
+contenedor **por entorno**, nombrado con el prefijo.
 
 ```bash
 az group create --name hsoft-rg --location westeurope
@@ -46,7 +47,7 @@ az storage account create \
   --min-tls-version TLS1_2 \
   --allow-blob-public-access false
 
-for entorno in develop qa production; do
+for entorno in dv qa pr; do
   az storage container create \
     --name "socialschool-terraform-${entorno}" \
     --account-name hsoftcontainer \
@@ -62,7 +63,7 @@ variables ahí y el contenedor depende del entorno, así que ese valor entra por
 ```bash
 cd devops/iac
 terraform init -input=false \
-  -backend-config="container_name=socialschool-terraform-develop"
+  -backend-config="container_name=socialschool-terraform-dv"
 ```
 
 Para trabajar **sin Azure y sin estado** (lo que se usa para revisar sintaxis):
@@ -81,41 +82,60 @@ Las contraseñas **no están en ningún fichero**: entran por variables de entor
 export TF_VAR_mysql_administrator_password="<contraseña>"
 export TF_VAR_keycloak_admin_password="<contraseña>"
 
-terraform apply -var environment=develop
+terraform apply -var environment=dv
 ```
 
-## 4. Aplicar primero el registro (para publicar imágenes antes que el resto)
+## 4. Aplicar primero el registro (para poder publicar imágenes)
+
+El registro tiene que existir antes de que una pipeline publique en él, así que se puede aplicar solo
+ese módulo y el resto después.
 
 ```bash
-terraform apply -var environment=develop -target=module.container_registry
-az acr login --name socialschoolacrdevelop
-docker build -t socialschoolacrdevelop.azurecr.io/socialschool-api:develop .
-docker push socialschoolacrdevelop.azurecr.io/socialschool-api:develop
-terraform apply -var environment=develop
+terraform apply -var environment=dv -target=module.container_registry
+```
+
+Publicar una imagen a mano solo hace falta si no hay pipeline que lo haga (o para una prueba). Ojo:
+**el `Dockerfile` está dentro del proyecto de la API** y el contexto de build es la carpeta `src/`, no
+este directorio.
+
+```bash
+# Desde la RAÍZ del repositorio, no desde devops/iac.
+az acr login --name socialschoolacrdv
+docker build -f src/HSoft.SocialSchool.Api/Dockerfile -t socialschoolacrdv.azurecr.io/socialschool-api:manual src
+docker push socialschoolacrdv.azurecr.io/socialschool-api:manual
 ```
 
 Los repositorios del registro **no** son un recurso de Azure: aparecen al empujar la primera imagen.
+La imagen de la API la gobierna **su pipeline** (ver `devops/README.md`), que publica con la etiqueta
+del commit; aquí el registro solo tiene que existir.
 
 ## 5. Convención de nombres
 
-| Recurso | Patrón | Ejemplo (`develop`) |
+El valor de `<entorno>` es el prefijo corto: **`dv`** para *develop*, **`qa`** para *qa* y **`pr`** para
+*production*. Los ejemplos de la tabla son los de *develop*.
+
+| Recurso | Patrón | Ejemplo (`dv`) |
 |---|---|---|
 | Grupo de recursos del estado | `hsoft-rg` | igual |
 | Storage account del estado | `hsoftcontainer` | igual |
-| Contenedor del estado | `socialschool-terraform-<entorno>` | `socialschool-terraform-develop` |
-| Grupo de recursos del entorno | `socialschool-rg-<entorno>` | `socialschool-rg-develop` |
-| Registro | `socialschoolacr<entorno>` | `socialschoolacrdevelop` |
-| Key Vault | `socialschool-kv-<entorno>` | `socialschool-kv-develop` |
-| Servidor MySQL | `socialschool-mysql-<entorno>` | `socialschool-mysql-develop` |
-| Espacio de logs | `socialschool-log-<entorno>` | `socialschool-log-develop` |
-| Entorno de Container Apps | `socialschool-cae-<entorno>` | `socialschool-cae-develop` |
-| Identidad gestionada | `socialschool-id-<entorno>` | `socialschool-id-develop` |
-| Aplicaciones | `socialschool-<app>-<entorno>` | `socialschool-api-develop` |
+| Contenedor del estado | `socialschool-terraform-<entorno>` | `socialschool-terraform-dv` |
+| Grupo de recursos del entorno | `socialschool-rg-<entorno>` | `socialschool-rg-dv` |
+| Registro | `socialschoolacr<entorno>` | `socialschoolacrdv` |
+| Key Vault | `socialschool-kv-<entorno>` | `socialschool-kv-dv` |
+| Servidor MySQL | `socialschool-mysql-<entorno>` | `socialschool-mysql-dv` |
+| Espacio de logs | `socialschool-log-<entorno>` | `socialschool-log-dv` |
+| Entorno de Container Apps | `socialschool-cae-<entorno>` | `socialschool-cae-dv` |
+| Identidad gestionada | `socialschool-id-<entorno>` | `socialschool-id-dv` |
+| Aplicaciones | `socialschool-<app>-<entorno>` | `socialschool-api-dv` |
 
 No hay sufijo de unicidad: los nombres que son únicos a nivel global (registro, Key Vault, MySQL) se
-resuelven solo con el entorno. Si uno está cogido, el `apply` falla y hay que decidir un sufijo.
-Aviso de longitud: `socialschool-keycloak-production` son **32 caracteres, justo el límite** de
-Container Apps; si el prefijo creciera, esa aplicación tendría que acortar el nombre.
+resuelven solo con el entorno. Si uno está cogido, el `apply` falla y hay que decidir un sufijo. El
+nombre de aplicación más largo, `socialschool-keycloak-pr`, son 22 caracteres, así que queda dentro del
+límite de Container Apps con holgura.
+
+Ojo con el prefijo: es **el valor con el que se aplicó Terraform**, y las pipelines lo leen de la
+variable `ENVIRONMENT_PREFIX` de cada *environment* de GitHub (ver `devops/README.md`). Tiene que
+coincidir, porque es lo que forma los nombres que buscan los comandos de `az`.
 
 ## 6. Estado actual de las aplicaciones
 
@@ -130,11 +150,14 @@ Container Apps; si el prefijo creciera, esa aplicación tendría que acortar el 
   imagen es el **modo desarrollo**.
 - Las variables `KC_*` de Keycloak ya están puestas (base de datos, proxy, hostname). Son inofensivas
   en la imagen de ejemplo.
-- **La imagen de Keycloak la gobierna la pipeline**, no Terraform: un workflow manual la apunta a la
+- **La imagen de Keycloak la gobierna su pipeline**, no Terraform: un workflow manual la apunta a la
   imagen pública de Phase Two (ver `devops/README.md`), y por eso Terraform **ignora** la imagen, el
   comando y los argumentos de esa aplicación. El `image` que aparece aquí es solo el **valor inicial**,
-  y **recrear la aplicación la devuelve a la imagen de ejemplo**. Solo Keycloak está en esa situación:
-  la de la API sigue siendo responsabilidad de Terraform hasta que exista su pipeline.
+  y **recrear la aplicación la devuelve a la imagen de ejemplo**.
+- **La imagen de la API también la gobierna su pipeline**: la construye, la publica en el registro del
+  entorno con la etiqueta del commit y apunta la aplicación a ella. Terraform solo pone el valor
+  inicial, así que **recrear la aplicación también la devuelve a la imagen de ejemplo**. Para las dos
+  aplicaciones, por tanto, un `apply` verde no quiere decir que esté corriendo la imagen real.
 - **La API ya habla MySQL**: su capa de Persistencia usa el proveedor de Oracle para MySQL y la
   migración está regenerada contra ese motor, así que la base `api` del servidor del entorno es la que
   espera encontrar.
@@ -149,6 +172,6 @@ Container Apps; si el prefijo creciera, esa aplicación tendría que acortar el 
 - **El firewall de MySQL permite los servicios de Azure**, porque un entorno de Container Apps de
   consumo no tiene direcciones de salida fijas. Producción querrá red privada.
 - **La colación de las bases es insensible a mayúsculas** (`utf8mb4_0900_ai_ci`): `Peter` y `peter`
-  colisionan. Afecta a la unicidad del nick y hay que confirmarlo en `switch-to-mysql`.
+  colisionan. Por eso el nick es insensible a mayúsculas, como quedó decidido al pasar a MySQL.
 - **Keycloak usa el administrador del servidor MySQL**, no un usuario por base. Funciona, pero crear
   usuarios por base sería lo correcto.
