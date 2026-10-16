@@ -35,4 +35,8 @@
 	  <Folder Include="wwwroot\" />
 	  <Folder Include="Infrastructure\Security\" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Dockerfile" />
+	</ItemGroup>
 </Project>
