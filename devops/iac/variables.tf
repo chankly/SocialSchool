@@ -6,7 +6,7 @@ variable "environment" {
 variable "api_audience" {
   description = "Audiencia que la API espera en el token de Keycloak."
   type        = string
-  default     = "SocialSchool-Api"
+  default     = "0B28A13A-DF06-4840-958A-CC33605B3EB7"
 }
 
 variable "keycloak_realm" {
