@@ -14,7 +14,10 @@ namespace HSoft.SocialSchool.Persistence.Configurations
             builder.Property(user => user.Id).ValueGeneratedNever();
 
             builder.Property(user => user.Email).IsRequired().HasMaxLength(320);
-            builder.Property(user => user.Nickname).IsRequired().HasMaxLength(50);
+
+            // Nullable: la cuenta nace desde Keycloak sin nick y lo fija el usuario al completar el perfil.
+            // El índice único sigue siendo válido porque MySQL admite varios nulos.
+            builder.Property(user => user.Nickname).HasMaxLength(50);
             builder.Property(user => user.IdentityProvider).IsRequired().HasMaxLength(50);
             builder.Property(user => user.ExternalIdentityId).IsRequired().HasMaxLength(200);
             builder.Property(user => user.PreferredLanguage).HasMaxLength(10);

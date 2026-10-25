@@ -1,7 +1,9 @@
 locals {
-  mysql_connection_string_secret = "mysql-connection-string"
-  mysql_admin_password_secret    = "mysql-admin-password"
-  keycloak_admin_password_secret = "keycloak-admin-password"
+  mysql_connection_string_secret    = "mysql-connection-string"
+  mysql_admin_password_secret       = "mysql-admin-password"
+  keycloak_admin_password_secret    = "keycloak-admin-password"
+  keycloak_admin_client_id_name     = "keycloak-admin-client-id"
+  keycloak_admin_client_secret_name = "keycloak-admin-client-secret"
 }
 
 resource "azurerm_key_vault" "key_vault" {
@@ -51,5 +53,19 @@ resource "azurerm_key_vault_secret" "mysql_admin_password" {
 resource "azurerm_key_vault_secret" "keycloak_admin_password" {
   name         = local.keycloak_admin_password_secret
   value        = var.keycloak_admin_password
+  key_vault_id = azurerm_key_vault.key_vault.id
+}
+
+# Cliente confidencial con el que la API consulta la Admin API de Keycloak cuando llega un registro.
+# El cliente se crea a mano en el realm (service account con el rol view-users); ver devops/README.md.
+resource "azurerm_key_vault_secret" "keycloak_admin_client_id" {
+  name         = local.keycloak_admin_client_id_name
+  value        = var.keycloak_admin_client_id
+  key_vault_id = azurerm_key_vault.key_vault.id
+}
+
+resource "azurerm_key_vault_secret" "keycloak_admin_client_secret" {
+  name         = local.keycloak_admin_client_secret_name
+  value        = var.keycloak_admin_client_secret
   key_vault_id = azurerm_key_vault.key_vault.id
 }

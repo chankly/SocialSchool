@@ -1,0 +1,24 @@
+{
+    "id": "e7023ddb-8146-4b9c-981a-631b8ee8856c",
+    "time": 1792256509401,
+    "realmId": "52f16a29-7e4d-435d-921b-bdc9d02b30cf",
+    "realmName": "SocialSchool",
+    "uid": "4119fd4a-bf99-4bbc-8b14-7b2f4e23108b",
+    "authDetails": {
+        "realmId": "SocialSchool",
+        "clientId": "144DA3B3-CCB9-40F4-9C13-30A0FB9D621E",
+        "userId": "ba31e1e2-0d4a-4b44-a3a9-641cc4309e7c",
+        "ipAddress": "79.116.154.213",
+        "username": "heviaincognito@gmail.com",
+        "sessionId": "PEG7B9fI0fmFN1ozPK0g3CMq"
+    },
+    "details": {
+        "identity_provider": "google",
+        "register_method": "broker",
+        "identity_provider_identity": "heviaincognito@gmail.com",
+        "code_id": "PEG7B9fI0fmFN1ozPK0g3CMq",
+        "email": "heviaincognito@gmail.com",
+        "username": "heviaincognito@gmail.com"
+    },
+    "type": "access.REGISTER"
+}

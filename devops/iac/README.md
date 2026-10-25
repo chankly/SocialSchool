@@ -81,9 +81,17 @@ Las contraseñas **no están en ningún fichero**: entran por variables de entor
 # cmd.exe: set TF_VAR_mysql_administrator_password=...
 export TF_VAR_mysql_administrator_password="<contraseña>"
 export TF_VAR_keycloak_admin_password="<contraseña>"
+export TF_VAR_keycloak_admin_client_id="<client id>"
+export TF_VAR_keycloak_admin_client_secret="<client secret>"
 
 terraform apply -var environment=dv
 ```
+
+`keycloak_admin_client_id` y `keycloak_admin_client_secret` son del **cliente confidencial** con el que la
+API lee usuarios de la Admin API de Keycloak cuando llega un evento de registro. Ese cliente se crea a mano
+en el realm: confidencial, con *service accounts* activadas, y con el rol **`view-users`** de
+`realm-management` concedido a su cuenta de servicio. Terraform solo guarda esas dos credenciales en Key
+Vault y las pasa a la Container App como `Keycloak__Admin__ClientId` y `Keycloak__Admin__ClientSecret`.
 
 ## 4. Aplicar primero el registro (para poder publicar imágenes)
 

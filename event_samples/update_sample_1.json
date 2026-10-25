@@ -1,0 +1,20 @@
+{
+    "id": "25792dbc-b972-41e6-ac50-b42bd89a0d8f",
+    "time": 1792257687224,
+    "realmId": "52f16a29-7e4d-435d-921b-bdc9d02b30cf",
+    "realmName": "SocialSchool",
+    "uid": "d185a630-33f0-46a6-b4e7-d297b4ce5bd5",
+    "authDetails": {
+        "realmId": "SocialSchool",
+        "clientId": "account",
+        "userId": "ba31e1e2-0d4a-4b44-a3a9-641cc4309e7c",
+        "ipAddress": "79.116.154.213",
+        "username": "heviaincognito@gmail.com",
+        "sessionId": "tH12GEEnMGBDDxB3flxHPZ8B"
+    },
+    "details": {
+        "updated_locale": "en",
+        "context": "ACCOUNT"
+    },
+    "type": "access.UPDATE_PROFILE"
+}

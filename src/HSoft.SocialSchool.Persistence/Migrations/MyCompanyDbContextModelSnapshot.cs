@@ -597,7 +597,6 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<string>("Nickname")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
