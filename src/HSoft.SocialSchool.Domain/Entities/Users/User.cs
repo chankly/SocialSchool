@@ -119,6 +119,18 @@ namespace HSoft.SocialSchool.Domain.Entities.Users
             DeletedAt = null;
         }
 
+        /// <summary>
+        /// Actualiza el correo cuando cambia en el proveedor de identidad. El correo no lo elige el usuario
+        /// en nuestra aplicación: llega de Keycloak.
+        /// </summary>
+        public void ChangeEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email cannot be empty.", nameof(email));
+
+            Email = email;
+        }
+
         public void ChangePreferredLanguage(string preferredLanguage)
         {
             if (string.IsNullOrWhiteSpace(preferredLanguage))
