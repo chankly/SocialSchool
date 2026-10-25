@@ -1,0 +1,342 @@
+@page "/friends"
+@implements IDisposable
+@inject IFriendsService FriendsService
+@inject ISessionService Session
+
+<PageHeader Eyebrow="Comunidad" Title="Amistades"
+            Subtitle="Amigos, solicitudes y cuentas por descubrir. Las acciones modifican el estado simulado en memoria.">
+    <Actions>
+        <Pill Text="Datos simulados" Tone="UiTone.Info" Icon="sparkles" />
+    </Actions>
+</PageHeader>
+
+@if (!Session.IsAuthenticated)
+{
+    <section class="auth-card card">
+        <div class="card-body">
+            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
+            <h2>Necesitas una sesión para ver tus amistades</h2>
+            <p>Las listas están sujetas a las reglas de visibilidad del producto y requieren usuario autenticado.</p>
+            <div class="button-row">
+                <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
+                    <Icon Name="user" Size="18" />
+                    Entrar como deportista
+                </button>
+                <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
+                    Entrar como escuela
+                </button>
+            </div>
+        </div>
+    </section>
+}
+else if (_loading)
+{
+    <LoadingPanel Message="Cargando amistades simuladas…" />
+}
+else if (_error is not null)
+{
+    <Alert Tone="UiTone.Danger" Title="No se han podido cargar las amistades" IconName="alert">
+        <p class="alert-text">@_error</p>
+        <button type="button" class="btn btn-outline btn-sm" @onclick="RetryAsync">Reintentar</button>
+    </Alert>
+}
+else if (_overview is not null)
+{
+    @if (_actionMessage is not null)
+    {
+        <Alert Tone="@(_actionFailed ? UiTone.Danger : UiTone.Success)"
+               Title="@(_actionFailed ? "La operación no se ha aplicado" : "Cambios guardados")"
+               IconName="@(_actionFailed ? "alert" : "check")"
+               Message="@_actionMessage" />
+    }
+
+    <div class="tabs" role="tablist">
+        <button type="button" class="tab @(_tab == FriendsTab.Friends ? "is-active" : null)"
+                @onclick="() => SelectTab(FriendsTab.Friends)">
+            Amigos <span class="tab-count">@_overview.Friends.Count</span>
+        </button>
+        <button type="button" class="tab @(_tab == FriendsTab.Requests ? "is-active" : null)"
+                @onclick="() => SelectTab(FriendsTab.Requests)">
+            Solicitudes <span class="tab-count">@(_overview.IncomingRequests.Count + _overview.OutgoingRequests.Count)</span>
+        </button>
+        <button type="button" class="tab @(_tab == FriendsTab.Discover ? "is-active" : null)"
+                @onclick="() => SelectTab(FriendsTab.Discover)">
+            Descubrir <span class="tab-count">@_overview.Suggestions.Count</span>
+        </button>
+    </div>
+
+    @if (_tab == FriendsTab.Friends)
+    {
+        <section class="card">
+            <div class="card-head">
+                <h3>Tus amigos</h3>
+                <Pill Text="@($"{_overview.Friends.Count}")" Tone="UiTone.Neutral" />
+            </div>
+            <div class="card-body">
+                @if (_overview.Friends.Count == 0)
+                {
+                    <EmptyState Icon="users" Title="Todavía no tienes amigos"
+                                Message="Encuentra deportistas y escuelas en la pestaña Descubrir.">
+                        <button type="button" class="btn btn-primary btn-sm" @onclick="() => SelectTab(FriendsTab.Discover)">
+                            Descubrir cuentas
+                        </button>
+                    </EmptyState>
+                }
+                else
+                {
+                    <ul class="person-list">
+                        @foreach (var friend in _overview.Friends)
+                        {
+                            <li class="person-row" @key="friend.Id">
+                                <Avatar Name="@friend.DisplayName" ImageUrl="@friend.PictureUrl" Size="md" />
+                                <div class="person-text">
+                                    <strong>@friend.DisplayName</strong>
+                                    <span>@("@")@friend.Nickname · @friend.Subtitle</span>
+                                </div>
+                                <Pill Text="@friend.AccountType.ToDisplayName()" Tone="UiTone.Neutral" />
+                                <button type="button" class="btn btn-outline btn-sm"
+                                        disabled="@(_busyId == friend.Id)"
+                                        @onclick="() => RunActionAsync(friend.Id, () => FriendsService.RemoveFriendAsync(friend.Id))">
+                                    Quitar
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+    }
+    else if (_tab == FriendsTab.Requests)
+    {
+        <div class="two-col">
+            <section class="card">
+                <div class="card-head">
+                    <h3>Recibidas</h3>
+                    <Pill Text="@($"{_overview.IncomingRequests.Count}")" Tone="@(_overview.IncomingRequests.Count > 0 ? UiTone.Warning : UiTone.Neutral)" />
+                </div>
+                <div class="card-body">
+                    @if (_overview.IncomingRequests.Count == 0)
+                    {
+                        <p class="muted">No hay solicitudes pendientes de responder.</p>
+                    }
+                    else
+                    {
+                        <ul class="person-list">
+                            @foreach (var request in _overview.IncomingRequests)
+                            {
+                                <li class="person-row" @key="request.Id">
+                                    <Avatar Name="@request.DisplayName" ImageUrl="@request.PictureUrl" Size="md" />
+                                    <div class="person-text">
+                                        <strong>@request.DisplayName</strong>
+                                        <span>@("@")@request.Nickname · @request.Subtitle</span>
+                                        <time>@FormatDate(request.RequestedAt)</time>
+                                    </div>
+                                    <div class="person-actions">
+                                        <button type="button" class="btn btn-primary btn-sm"
+                                                disabled="@(_busyId == request.Id)"
+                                                @onclick="() => RunActionAsync(request.Id, () => FriendsService.AcceptRequestAsync(request.Id))">
+                                            Aceptar
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-sm"
+                                                disabled="@(_busyId == request.Id)"
+                                                @onclick="() => RunActionAsync(request.Id, () => FriendsService.RejectRequestAsync(request.Id))">
+                                            Rechazar
+                                        </button>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                        <p class="muted small">El rechazo es silencioso para la otra persona.</p>
+                    }
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-head">
+                    <h3>Enviadas</h3>
+                    <Pill Text="@($"{_overview.OutgoingRequests.Count}")" Tone="UiTone.Neutral" />
+                </div>
+                <div class="card-body">
+                    @if (_overview.OutgoingRequests.Count == 0)
+                    {
+                        <p class="muted">No has enviado ninguna solicitud pendiente.</p>
+                    }
+                    else
+                    {
+                        <ul class="person-list">
+                            @foreach (var request in _overview.OutgoingRequests)
+                            {
+                                <li class="person-row" @key="request.Id">
+                                    <Avatar Name="@request.DisplayName" ImageUrl="@request.PictureUrl" Size="md" />
+                                    <div class="person-text">
+                                        <strong>@request.DisplayName</strong>
+                                        <span>@("@")@request.Nickname · @request.Subtitle</span>
+                                        <time>@FormatDate(request.RequestedAt)</time>
+                                    </div>
+                                    <button type="button" class="btn btn-outline btn-sm"
+                                            disabled="@(_busyId == request.Id)"
+                                            @onclick="() => RunActionAsync(request.Id, () => FriendsService.CancelRequestAsync(request.Id))">
+                                        Cancelar
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </section>
+        </div>
+    }
+    else
+    {
+        <section class="card">
+            <div class="card-head">
+                <h3>Cuentas por descubrir</h3>
+                <Pill Text="Sugerencias" Tone="UiTone.Info" Icon="search" />
+            </div>
+            <div class="card-body">
+                @if (Session.AccountType == AccountType.School)
+                {
+                    <p class="muted small">
+                        Como escuela solo puedes enviar solicitudes a deportistas: las amistades entre
+                        escuelas no están permitidas.
+                    </p>
+                }
+
+                @if (_overview.Suggestions.Count == 0)
+                {
+                    <EmptyState Icon="compass" Title="No quedan sugerencias"
+                                Message="Has enviado solicitudes a todas las cuentas que aparecían en la maqueta." />
+                }
+                else
+                {
+                    <ul class="person-list">
+                        @foreach (var person in _overview.Suggestions)
+                        {
+                            <li class="person-row" @key="person.Id">
+                                <Avatar Name="@person.DisplayName" Size="md" />
+                                <div class="person-text">
+                                    <strong>@person.DisplayName</strong>
+                                    <span>@("@")@person.Nickname · @person.Subtitle</span>
+                                </div>
+                                <Pill Text="@person.AccountType.ToDisplayName()" Tone="UiTone.Neutral" />
+                                <button type="button" class="btn btn-primary btn-sm"
+                                        disabled="@(_busyId == person.Id)"
+                                        @onclick="() => RunActionAsync(person.Id, () => FriendsService.SendRequestAsync(person.Id))">
+                                    <Icon Name="plus" Size="16" />
+                                    Enviar solicitud
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </section>
+    }
+}
+
+@code {
+    private FriendsOverviewResponse? _overview;
+    private bool _loading = true;
+    private string? _error;
+    private FriendsTab _tab = FriendsTab.Friends;
+    private string? _actionMessage;
+    private bool _actionFailed;
+    private Guid? _busyId;
+
+    private enum FriendsTab
+    {
+        Friends,
+        Requests,
+        Discover
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Session.Changed += HandleSessionChanged;
+        await LoadAsync();
+    }
+
+    public void Dispose() => Session.Changed -= HandleSessionChanged;
+
+    private void HandleSessionChanged() => _ = ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadAsync()
+    {
+        _error = null;
+        _actionMessage = null;
+        _actionFailed = false;
+
+        if (!Session.IsAuthenticated)
+        {
+            _overview = new FriendsOverviewResponse([], [], [], []);
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+
+        try
+        {
+            _overview = await FriendsService.GetOverviewAsync();
+        }
+        catch (Exception)
+        {
+            _error = "Los datos ficticios de amistades no han respondido.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task RetryAsync() => await LoadAsync();
+
+    private void SelectTab(FriendsTab tab) => _tab = tab;
+
+    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+
+    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+
+    private async Task RunActionAsync(Guid id, Func<Task<FriendActionResult>> action)
+    {
+        if (_busyId is not null)
+        {
+            return;
+        }
+
+        _busyId = id;
+        _actionMessage = null;
+
+        try
+        {
+            var result = await action();
+            _actionFailed = !result.IsSuccess;
+            _actionMessage = result.IsSuccess
+                ? "Los datos ficticios se han actualizado."
+                : result.Error;
+
+            if (result.IsSuccess)
+            {
+                _overview = await FriendsService.GetOverviewAsync();
+            }
+        }
+        catch (Exception)
+        {
+            _actionFailed = true;
+            _actionMessage = "No se ha podido completar la operación simulada.";
+        }
+        finally
+        {
+            _busyId = null;
+        }
+    }
+
+    private static string FormatDate(DateTimeOffset requestedAt) =>
+        requestedAt.ToLocalTime().ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+}

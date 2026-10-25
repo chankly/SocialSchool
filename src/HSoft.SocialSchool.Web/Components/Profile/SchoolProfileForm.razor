@@ -1,0 +1,234 @@
+@inject IProfileService ProfileService
+@inject ISportsService SportsService
+@inject IValidator<CreateSchoolProfileRequest> Validator
+@implements IDisposable
+
+<EditForm EditContext="_editContext" OnSubmit="SubmitAsync" class="card profile-form">
+    <div class="card-body">
+        <div class="form-intro">
+            <h2>Completa el perfil de tu escuela</h2>
+            <p>
+                Las escuelas se crean pendientes de validación. Al guardar el perfil se mantiene ese
+                estado y la API deja de responder <strong>204</strong> para este usuario.
+            </p>
+        </div>
+
+        <ValidationSummary class="form-summary" />
+
+        <div class="form-grid">
+            <FormField Label="Nick" Required="true" For="school-nickname" SpanTwo="true"
+                       Help="Único, inmutable y solo alfanumérico. No se podrá cambiar después.">
+                <InputText id="school-nickname" class="input" @bind-Value="_model.Nickname"
+                           autocomplete="off" placeholder="olasdelnorte" />
+                <ValidationMessage For="() => _model.Nickname" class="field-error" />
+            </FormField>
+
+            <FormField Label="Nombre de la escuela" Required="true" For="school-name">
+                <InputText id="school-name" class="input" @bind-Value="_model.Name"
+                           autocomplete="organization" placeholder="Olas del Norte" />
+                <ValidationMessage For="() => _model.Name" class="field-error" />
+            </FormField>
+
+            <FormField Label="Deporte principal" Required="true" For="school-sport"
+                       Help="Cada escuela declara un único deporte.">
+                <InputSelect id="school-sport" class="input" @bind-Value="_model.SportId" disabled="@_loadingSports">
+                    <option value="@Guid.Empty">Selecciona un deporte…</option>
+                    @foreach (var sport in _sports)
+                    {
+                        <option value="@sport.Id">@sport.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _model.SportId" class="field-error" />
+            </FormField>
+
+            <FormField Label="País" Required="true" For="school-country">
+                <InputSelect id="school-country" class="input" @bind-Value="_model.Country">
+                    @foreach (var country in CountryCatalog.All)
+                    {
+                        <option value="@country.Code">@country.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _model.Country" class="field-error" />
+            </FormField>
+
+            <FormField Label="Ciudad" Required="true" For="school-city">
+                <InputText id="school-city" class="input" @bind-Value="_model.City"
+                           autocomplete="address-level2" placeholder="San Sebastián" />
+                <ValidationMessage For="() => _model.City" class="field-error" />
+            </FormField>
+
+            <FormField Label="Correo de contacto" Required="true" For="school-email">
+                <InputText id="school-email" class="input" @bind-Value="_model.ContactEmail"
+                           type="email" autocomplete="email" placeholder="hola@escuela.example" />
+                <ValidationMessage For="() => _model.ContactEmail" class="field-error" />
+            </FormField>
+
+            <FormField Label="Teléfono" For="school-phone">
+                <InputText id="school-phone" class="input" @bind-Value="_model.Phone"
+                           type="tel" autocomplete="tel" placeholder="+34 943 000 000" />
+                <ValidationMessage For="() => _model.Phone" class="field-error" />
+            </FormField>
+
+            <FormField Label="Sitio web" For="school-website">
+                <InputText id="school-website" class="input" @bind-Value="_model.Website"
+                           placeholder="https://…" />
+                <ValidationMessage For="() => _model.Website" class="field-error" />
+            </FormField>
+
+            <FormField Label="Logo" For="school-logo"
+                       Help="URL pública de una imagen. En la maqueta no se suben archivos.">
+                <InputText id="school-logo" class="input" @bind-Value="_model.LogoUrl"
+                           placeholder="https://…" />
+                <ValidationMessage For="() => _model.LogoUrl" class="field-error" />
+            </FormField>
+
+            <FormField Label="Descripción" Required="true" For="school-description" SpanTwo="true"
+                       Help="Máximo 1000 caracteres. Aparecerá en el perfil público de la escuela.">
+                <InputTextArea id="school-description" class="input" @bind-Value="_model.Description"
+                               rows="5" maxlength="1000"
+                               placeholder="Cuenta qué ofrece la escuela, a quién se dirige y cómo son las clases." />
+                <ValidationMessage For="() => _model.Description" class="field-error" />
+            </FormField>
+        </div>
+
+        @if (_loadingSports)
+        {
+            <p class="muted">Cargando catálogo de deportes…</p>
+        }
+        else if (_sportsError is not null)
+        {
+            <Alert Tone="UiTone.Danger" Title="No se ha cargado el catálogo" IconName="alert">
+                <p class="alert-text">@_sportsError</p>
+                <button type="button" class="btn btn-outline btn-sm" @onclick="LoadSportsAsync">Reintentar</button>
+            </Alert>
+        }
+
+        @if (_submitError is not null)
+        {
+            <Alert Tone="UiTone.Danger" Title="No se ha podido crear el perfil" IconName="alert" Message="@_submitError" />
+        }
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" disabled="@(_busy || _loadingSports)">
+                <Icon Name="check" Size="18" />
+                @(_busy ? "Guardando perfil…" : "Crear el perfil de la escuela")
+            </button>
+            <p class="form-hint">
+                <Icon Name="shield" Size="14" />
+                La cuenta seguirá pendiente de validación después de guardar el perfil.
+            </p>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private readonly CreateSchoolProfileRequest _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messageStore = default!;
+    private IReadOnlyList<SportResponse> _sports = [];
+    private bool _loadingSports = true;
+    private string? _sportsError;
+    private string? _submitError;
+    private bool _busy;
+
+    /// <summary>Se invoca con el perfil recién creado.</summary>
+    [Parameter]
+    public EventCallback<ProfileResponse> OnCreated { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_model);
+        _messageStore = new ValidationMessageStore(_editContext);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+
+        await LoadSportsAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_editContext is not null)
+        {
+            _editContext.OnFieldChanged -= HandleFieldChanged;
+        }
+    }
+
+    private async Task LoadSportsAsync()
+    {
+        _loadingSports = true;
+        _sportsError = null;
+
+        try
+        {
+            _sports = await SportsService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            _sportsError = "El catálogo ficticio no ha respondido. Puedes intentarlo de nuevo.";
+        }
+        finally
+        {
+            _loadingSports = false;
+        }
+    }
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs args)
+    {
+        _messageStore.Clear(args.FieldIdentifier);
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private async Task SubmitAsync(EditContext context)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        _submitError = null;
+        _messageStore.Clear();
+        _editContext.NotifyValidationStateChanged();
+
+        var validation = await Validator.ValidateAsync(_model);
+        if (!validation.IsValid)
+        {
+            _messageStore.AddErrors(_model, validation.Errors);
+            _editContext.NotifyValidationStateChanged();
+            return;
+        }
+
+        _busy = true;
+
+        try
+        {
+            var result = await ProfileService.CreateSchoolProfileAsync(_model);
+
+            switch (result)
+            {
+                case ProfileSaveResult.Success success:
+                    await OnCreated.InvokeAsync(success.Profile);
+                    break;
+
+                case ProfileSaveResult.Conflict conflict:
+                    _messageStore.Add(new FieldIdentifier(_model, conflict.Field), conflict.Message);
+                    _editContext.NotifyValidationStateChanged();
+                    break;
+
+                case ProfileSaveResult.Unauthorized:
+                    _submitError = "La sesión ha caducado. Elige otra sesión de demo en la cabecera.";
+                    break;
+
+                case ProfileSaveResult.Failure failure:
+                    _submitError = failure.Message;
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            _submitError = "No se ha podido crear el perfil simulado. Inténtalo de nuevo.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

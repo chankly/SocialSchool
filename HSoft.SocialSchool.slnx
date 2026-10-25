@@ -3,5 +3,6 @@
   <Project Path="src/HSoft.SocialSchool.Application/HSoft.SocialSchool.Application.csproj" />
   <Project Path="src/HSoft.SocialSchool.Domain/HSoft.SocialSchool.Domain.csproj" />
   <Project Path="src/HSoft.SocialSchool.Persistence/HSoft.SocialSchool.Persistence.csproj" />
+  <Project Path="src/HSoft.SocialSchool.Web/HSoft.SocialSchool.Web.csproj" />
   <Project Path="tests/HSoft.SocialSchool.Api.IntegrationTests/HSoft.SocialSchool.Api.IntegrationTests.csproj" />
 </Solution>

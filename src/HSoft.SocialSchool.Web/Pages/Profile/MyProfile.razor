@@ -1,0 +1,217 @@
+@page "/profile"
+@implements IDisposable
+@inject ProfileState ProfileState
+@inject ISessionService Session
+
+<PageHeader Eyebrow="Mi cuenta"
+            Title="Mi perfil"
+            Subtitle="La pantalla resuelve el flujo real de GET /api/user/profile/me: 200 con perfil, 204 sin perfil y 401 sin sesión.">
+    <Actions>
+        <span class="api-chip">
+            <span class="api-method">GET</span>
+            <code>/api/user/profile/me</code>
+            <span class="api-status api-status-@ApiStatusTone.ToCss()">@ApiStatusText</span>
+        </span>
+    </Actions>
+</PageHeader>
+
+<Alert Tone="UiTone.Info" Title="Recorre los tres estados desde la cabecera" IconName="sparkles">
+    <p class="alert-text">
+        Cambia la <strong>sesión de demo</strong> para ver un perfil existente (200), una cuenta sin
+        perfil (204) o una petición sin token (401). El tipo de cuenta del token se normaliza antes de
+        decidir qué formulario mostrar.
+    </p>
+</Alert>
+
+@if (ProfileState.Status is ProfileLoadStatus.Unknown or ProfileLoadStatus.Loading)
+{
+    <LoadingPanel Message="Consultando el perfil simulado…" />
+}
+else if (ProfileState.Status == ProfileLoadStatus.Unauthorized)
+{
+    <section class="auth-card card">
+        <div class="card-body">
+            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
+            <p class="state-code state-code-inline">401 Unauthorized</p>
+            <h2>No hay ninguna sesión activa</h2>
+            <p>
+                La petición al perfil no lleva un token válido, así que la API no la atiende. En
+                producción la web redirigiría a Keycloak; en la maqueta puedes simular el regreso del
+                login con una cuenta ficticia.
+            </p>
+            <div class="button-row">
+                <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
+                    <Icon Name="user" Size="18" />
+                    Entrar como deportista
+                </button>
+                <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
+                    Entrar como escuela
+                </button>
+            </div>
+            <p class="muted small">No se usa Keycloak real: no hay tokens ni secretos en el cliente.</p>
+        </div>
+    </section>
+}
+else if (ProfileState.Status == ProfileLoadStatus.Failed)
+{
+    <Alert Tone="UiTone.Danger" Title="No se ha podido consultar el perfil" IconName="alert">
+        <p class="alert-text">@ProfileState.ErrorMessage</p>
+        <button type="button" class="btn btn-outline btn-sm" @onclick="RetryAsync">Reintentar</button>
+    </Alert>
+}
+else if (ProfileState.Status == ProfileLoadStatus.NoProfile)
+{
+    <section class="state-banner">
+        <span class="state-code">204</span>
+        <div>
+            <h2>Tu cuenta todavía no tiene perfil</h2>
+            <p>
+                La consulta ha respondido <strong>204 No Content</strong>. El usuario está autenticado,
+                pero los datos del perfil todavía no existen. Este es el formulario de alta que la web
+                muestra en ese caso.
+            </p>
+        </div>
+    </section>
+
+    @if (Session.AccountType is null)
+    {
+        <Alert Tone="UiTone.Warning" Title="Tipo de cuenta no reconocido" IconName="alert">
+            <p class="alert-text">
+                El token no trae un valor de <code>userType</code> que el cliente pueda normalizar,
+                así que no es posible decidir qué formulario mostrar.
+            </p>
+        </Alert>
+    }
+    else
+    {
+        <div class="token-card">
+            <div class="token-row">
+                <span class="token-key">userType del token</span>
+                <span class="token-value">@RawUserTypeText</span>
+            </div>
+            <div class="token-row">
+                <span class="token-key">Tipo normalizado</span>
+                <span class="token-value">@SessionTypeText</span>
+            </div>
+            <div class="token-row">
+                <span class="token-key">Estado de la cuenta</span>
+                <span class="token-value">@SessionStatusText</span>
+            </div>
+            <div class="token-row">
+                <span class="token-key">sub</span>
+                <span class="token-value mono">@Session.UserId</span>
+            </div>
+        </div>
+
+        @if (Session.AccountStatus == AccountStatus.PendingValidation)
+        {
+            <Alert Tone="UiTone.Warning" Title="Escuela pendiente de validación" IconName="clock">
+                <p class="alert-text">
+                    La cuenta se ha creado como toda escuela: pendiente de que el equipo de SocialSchool
+                    la valide. Puedes completar el perfil igualmente.
+                </p>
+            </Alert>
+        }
+
+        @if (Session.AccountType == AccountType.Athlete)
+        {
+            <AthleteProfileForm OnCreated="HandleCreated" />
+        }
+        else
+        {
+            <SchoolProfileForm OnCreated="HandleCreated" />
+        }
+    }
+}
+else if (ProfileState.Profile is { } profile)
+{
+    @if (_created)
+    {
+        <Alert Tone="UiTone.Success" Title="Perfil creado" IconName="check">
+            <p class="alert-text">
+                La maqueta ya devuelve <strong>200 OK</strong> para esta cuenta. El nick ha quedado fijado.
+            </p>
+        </Alert>
+    }
+
+    <ProfileView Profile="@profile" />
+
+    <div class="inline-note">
+        <Icon Name="lock" Size="16" />
+        <p>
+            El nick <strong>@("@")@profile.Nickname</strong> es único e inmutable.
+            La edición del resto de campos llegará con el endpoint de actualización, que esta maqueta
+            todavía no incluye.
+        </p>
+    </div>
+}
+else
+{
+    <Alert Tone="UiTone.Warning" Title="Estado no representable" IconName="alert">
+        <p class="alert-text">La combinación de estado y perfil no se puede pintar. Recarga la maqueta.</p>
+    </Alert>
+}
+
+@code {
+    private bool _created;
+
+    private string ApiStatusText => ProfileState.Status switch
+    {
+        ProfileLoadStatus.Loading => "…",
+        ProfileLoadStatus.Unknown => "pendiente",
+        ProfileLoadStatus.Loaded => "200 OK",
+        ProfileLoadStatus.NoProfile => "204 No Content",
+        ProfileLoadStatus.Unauthorized => "401 Unauthorized",
+        ProfileLoadStatus.Failed => "error",
+        _ => "—"
+    };
+
+    private UiTone ApiStatusTone => ProfileState.Status switch
+    {
+        ProfileLoadStatus.Loaded => UiTone.Success,
+        ProfileLoadStatus.NoProfile => UiTone.Info,
+        ProfileLoadStatus.Unauthorized => UiTone.Warning,
+        ProfileLoadStatus.Failed => UiTone.Danger,
+        _ => UiTone.Neutral
+    };
+
+    private string RawUserTypeText => Session.RawUserType ?? "(sin valor)";
+
+    private string SessionTypeText => Session.AccountType is { } accountType
+        ? accountType.ToDisplayName()
+        : "desconocido";
+
+    private string SessionStatusText => Session.AccountStatus is { } accountStatus
+        ? accountStatus.ToDisplayName()
+        : "desconocido";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Session.Changed += HandleSessionChanged;
+        ProfileState.Changed += HandleProfileStateChanged;
+
+        await ProfileState.LoadAsync();
+    }
+
+    public void Dispose()
+    {
+        Session.Changed -= HandleSessionChanged;
+        ProfileState.Changed -= HandleProfileStateChanged;
+    }
+
+    private void HandleSessionChanged() => _created = false;
+
+    private void HandleProfileStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void HandleCreated(ProfileResponse profile)
+    {
+        _created = true;
+        ProfileState.ApplyProfile(profile);
+    }
+
+    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+
+    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+
+    private async Task RetryAsync() => await ProfileState.LoadAsync(force: true);
+}

@@ -1,0 +1,239 @@
+@page "/"
+@implements IDisposable
+@inject ISessionService Session
+@inject WebAppSettings Settings
+
+<PageHeader Eyebrow="Boceto inicial" Title="@Greeting"
+            Subtitle="Una maqueta navegable de la web de SocialSchool, construida con Blazor WebAssembly y datos simulados.">
+    <Actions>
+        <a class="btn btn-primary" href="profile">
+            <Icon Name="user" Size="18" />
+            Mi perfil
+        </a>
+    </Actions>
+</PageHeader>
+
+<section class="home-hero">
+    <div class="home-hero-copy">
+        <p class="eyebrow eyebrow-light">SocialSchool · cliente web</p>
+        <h2>La trayectoria se ve. El nivel se contrasta.</h2>
+        <p>
+            Deportistas y escuelas comparten perfil, amistades y asistencia. Esta primera maqueta se
+            centra en el perfil propio y deja el resto de las pantallas preparadas para crecer.
+        </p>
+        <div class="button-row">
+            <a class="btn btn-light" href="profile">Revisar mi perfil</a>
+            <a class="btn btn-ghost-light" href="schools">Explorar escuelas</a>
+        </div>
+    </div>
+    <div class="home-hero-stats">
+        <div class="hero-stat">
+            <strong>200</strong>
+            <span>perfil completo</span>
+        </div>
+        <div class="hero-stat">
+            <strong>204</strong>
+            <span>formulario de alta</span>
+        </div>
+        <div class="hero-stat">
+            <strong>401</strong>
+            <span>sin sesión</span>
+        </div>
+    </div>
+</section>
+
+<div class="two-col">
+    <section class="card">
+        <div class="card-head">
+            <h3>Tu sesión de demo</h3>
+            @if (Session.AccountType is { } accountType)
+            {
+                <Pill Text="@accountType.ToDisplayName()" Tone="UiTone.Brand" />
+            }
+            else
+            {
+                <Pill Text="Sin sesión" Tone="UiTone.Neutral" Icon="lock" />
+            }
+        </div>
+        <div class="card-body">
+            <dl class="info-list">
+                <div class="info-row">
+                    <dt>Cuenta</dt>
+                    <dd>@Session.DisplayName</dd>
+                </div>
+                <div class="info-row">
+                    <dt>Correo</dt>
+                    <dd>@(Session.IsAuthenticated ? Session.Email : "—")</dd>
+                </div>
+                <div class="info-row">
+                    <dt>userType del token</dt>
+                    <dd><code>@RawUserTypeText</code> → @SessionTypeText</dd>
+                </div>
+                <div class="info-row">
+                    <dt>Estado</dt>
+                    <dd>@SessionStatusText</dd>
+                </div>
+                <div class="info-row">
+                    <dt>sub</dt>
+                    <dd class="mono small">@Session.UserId</dd>
+                </div>
+            </dl>
+            <p class="muted small">
+                Cambia la sesión en la cabecera para recorrer los tres estados del perfil.
+            </p>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <h3>Estados de <code>GET /api/user/profile/me</code></h3>
+        </div>
+        <div class="card-body state-list">
+            <div class="state-line">
+                <span class="state-code state-code-sm">200</span>
+                <div>
+                    <strong>Perfil existente</strong>
+                    <p>Se pinta el bloque <code>athlete</code> o <code>school</code> según la cuenta.</p>
+                </div>
+            </div>
+            <div class="state-line">
+                <span class="state-code state-code-sm">204</span>
+                <div>
+                    <strong>Sin perfil todavía</strong>
+                    <p>La web muestra el formulario de alta del tipo de cuenta.</p>
+                </div>
+            </div>
+            <div class="state-line">
+                <span class="state-code state-code-sm">401</span>
+                <div>
+                    <strong>Sin sesión</strong>
+                    <p>La web pediría autenticarse; aquí se simula el regreso del login.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<section class="pillar-grid">
+    <article class="card pillar">
+        <span class="pillar-icon"><Icon Name="trophy" Size="22" /></span>
+        <h3>Trayectoria visible</h3>
+        <p>La escuela conoce el recorrido del deportista y los deportes que practica.</p>
+    </article>
+    <article class="card pillar">
+        <span class="pillar-icon"><Icon Name="activity" Size="22" /></span>
+        <h3>Nivel contrastable</h3>
+        <p>Las maniobras se puntúan entre iguales y escuelas. La maqueta aún no incluye esa pantalla.</p>
+    </article>
+    <article class="card pillar">
+        <span class="pillar-icon"><Icon Name="users" Size="22" /></span>
+        <h3>Contacto real</h3>
+        <p>Amistades y vínculos de asistencia sostienen la relación entre deportistas y escuelas.</p>
+    </article>
+</section>
+
+<div class="two-col">
+    <section class="card">
+        <div class="card-head">
+            <h3>Actividad de la comunidad</h3>
+            <Pill Text="Simulada" Tone="UiTone.Info" Icon="sparkles" />
+        </div>
+        <div class="card-body">
+            <ul class="activity-list">
+                @foreach (var item in RecentActivity)
+                {
+                    <li class="activity-row" @key="item.Title">
+                        <span class="activity-icon"><Icon Name="@item.Icon" Size="16" /></span>
+                        <div class="activity-text">
+                            <strong>@item.Title</strong>
+                            <span>@item.Detail</span>
+                        </div>
+                        <time>@item.When</time>
+                    </li>
+                }
+            </ul>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-head">
+            <h3>Configuración de la maqueta</h3>
+        </div>
+        <div class="card-body">
+            <dl class="info-list">
+                <div class="info-row">
+                    <dt>API</dt>
+                    <dd class="mono">@Settings.ApiBaseUrl</dd>
+                </div>
+                <div class="info-row">
+                    <dt>Datos simulados</dt>
+                    <dd>@(Settings.UseMocks ? "activados" : "desactivados")</dd>
+                </div>
+                <div class="info-row">
+                    <dt>Keycloak</dt>
+                    <dd class="mono small">@Settings.KeycloakAuthority</dd>
+                </div>
+                <div class="info-row">
+                    <dt>Cliente</dt>
+                    <dd>@Settings.KeycloakClientId</dd>
+                </div>
+            </dl>
+            <p class="muted small">
+                Valores de ejemplo: no hay credenciales ni secretos en el cliente.
+            </p>
+
+            <h4 class="small-heading">Siguientes pasos</h4>
+            <ul class="check-list">
+                <li><Icon Name="check" Size="15" /> Sustituir los mocks por servicios HTTP contra la API.</li>
+                <li><Icon Name="check" Size="15" /> Incorporar el flujo OIDC con Keycloak.</li>
+                <li><Icon Name="check" Size="15" /> Añadir edición de perfil y catálogo de maniobras.</li>
+            </ul>
+        </div>
+    </section>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<ActivityItem> RecentActivity =
+    [
+        new ActivityItem(
+            "Bilbao Skate Lab",
+            "ha publicado una sesión libre para el sábado",
+            "hace 2 horas",
+            "school"),
+        new ActivityItem(
+            "Nerea Etxeberria",
+            "ha enviado una solicitud de amistad a Ana Otxoa",
+            "hace 5 horas",
+            "users"),
+        new ActivityItem(
+            "Olas del Norte",
+            "ha abierto el plazo de su campamento de verano",
+            "ayer",
+            "school"),
+        new ActivityItem(
+            "Marta Elorza",
+            "ha declarado una maniobra nueva en surf",
+            "ayer",
+            "trophy")
+    ];
+
+    private string Greeting => $"Hola, {Session.DisplayName}";
+
+    private string RawUserTypeText => Session.RawUserType ?? "(sin valor)";
+
+    private string SessionTypeText => Session.AccountType is { } accountType
+        ? accountType.ToDisplayName()
+        : "desconocido";
+
+    private string SessionStatusText => Session.AccountStatus is { } accountStatus
+        ? accountStatus.ToDisplayName()
+        : "desconocido";
+
+    protected override void OnInitialized() => Session.Changed += HandleSessionChanged;
+
+    public void Dispose() => Session.Changed -= HandleSessionChanged;
+
+    private void HandleSessionChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private sealed record ActivityItem(string Title, string Detail, string When, string Icon);
+}

@@ -1,0 +1,16 @@
+<div class="loading-panel" role="status" aria-live="polite">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton"></div>
+    <div class="skeleton skeleton-short"></div>
+    <div class="skeleton skeleton-block"></div>
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <p class="loading-text">@Message</p>
+    }
+</div>
+
+@code {
+    /// <summary>Texto que acompaña al esqueleto de carga.</summary>
+    [Parameter]
+    public string? Message { get; set; }
+}

@@ -1,0 +1,23 @@
+<span class="pill pill-@ToneClass">
+    @if (!string.IsNullOrWhiteSpace(Icon))
+    {
+        <Icon Name="@Icon" Size="14" />
+    }
+    <span>@Text</span>
+</span>
+
+@code {
+    /// <summary>Texto de la etiqueta.</summary>
+    [Parameter]
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>Matiz visual.</summary>
+    [Parameter]
+    public UiTone Tone { get; set; } = UiTone.Neutral;
+
+    /// <summary>Icono opcional.</summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    private string ToneClass => Tone.ToCss();
+}
