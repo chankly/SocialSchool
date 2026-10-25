@@ -608,6 +608,10 @@ namespace HSoft.SocialSchool.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExternalIdentityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Users_ExternalIdentityId");
+
                     b.HasIndex("Nickname")
                         .IsUnique()
                         .HasDatabaseName("IX_Users_Nickname");
