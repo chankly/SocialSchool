@@ -2,8 +2,10 @@ using Autofac;
 using HSoft.SocialSchool.Api.Core;
 using HSoft.SocialSchool.Api.Extensions;
 using HSoft.SocialSchool.Application.IoC.Services;
+using HSoft.SocialSchool.Application.Services;
 using HSoft.SocialSchool.Persistence.IoC.Autofac;
 using HSoft.SocialSchool.Persistence.IoC.Services;
+using HSoft.SocialSchool.Persistence.Services;
 
 var builder = WebApplication
     .CreateBuilder(args)
@@ -34,6 +36,9 @@ static void ConfigureServices(IServiceCollection services, IConfiguration config
     services.RegisterMediator();
     services.AddValidators();
     services.AddDbContextPool(configuration);
+    // La interfaz la declara Application y la implementa Persistence; el registro va aquí porque
+    // AddHttpClient vive en el framework de ASP.NET y no en un proyecto de clase.
+    services.AddHttpClient<IKeycloakUsersApi, KeycloakUsersApi>();
     //services.RegisterExternalAgents();
     //services.AddStackExchangeOptions(configuration);
 }

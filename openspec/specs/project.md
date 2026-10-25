@@ -90,8 +90,9 @@ Está previsto estudiarlo en el futuro como un tipo de usuario propio con panel 
 - **Registro: autentica Keycloak, la cuenta la crea el backend.** Keycloak federa el proveedor de
   identidad y emite el token; al registrarse **lanza un evento de integración** y el backend materializa
   la cuenta de negocio (`User`) con la identidad y el **tipo de cuenta** elegido. Los **datos del
-  perfil** —nombre, fecha de nacimiento, deportes, contacto…, lo que distingue a un deportista o a una
-  escuela— los completa el usuario **en nuestra aplicación** la primera vez, guiado por su tipo de cuenta.
+  perfil** —nick, nombre, fecha de nacimiento, deportes, contacto…, lo que distingue a un deportista o
+  a una escuela— los completa el usuario **en nuestra aplicación** la primera vez, guiado por su tipo de
+  cuenta.
 - **El perfil vive en nuestro dominio.** Keycloak solo aporta la identidad; los datos del perfil no se
   capturan allí. `GET /api/user/profile/me` responde `204` mientras el perfil no exista, y es lo que usa
   la web para mostrar el formulario de alta.

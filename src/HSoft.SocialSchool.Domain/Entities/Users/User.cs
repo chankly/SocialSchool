@@ -12,7 +12,11 @@ namespace HSoft.SocialSchool.Domain.Entities.Users
         private readonly List<NotificationPreference> _notificationPreferences = [];
 
         public string Email { get; private set; } = string.Empty;
-        public string Nickname { get; private set; } = string.Empty;
+
+        /// <summary>
+        /// Nick del usuario. Nace vacío: lo elige él al completar el perfil y a partir de ahí no cambia.
+        /// </summary>
+        public string? Nickname { get; private set; }
         public AccountType AccountType { get; private set; }
         public AccountStatus AccountStatus { get; private set; }
         public string IdentityProvider { get; private set; } = string.Empty;
@@ -29,11 +33,11 @@ namespace HSoft.SocialSchool.Domain.Entities.Users
 
         /// <summary>
         /// Crea una cuenta. El tipo es inmutable y las cuentas de escuela nacen pendientes de validación.
+        /// La cuenta nace <b>sin nick</b>: el nick lo elige el usuario al completar su perfil.
         /// </summary>
         public static User Create(
             Guid id,
             string email,
-            string nickname,
             AccountType accountType,
             string identityProvider,
             string externalIdentityId,
@@ -48,12 +52,9 @@ namespace HSoft.SocialSchool.Domain.Entities.Users
             if (string.IsNullOrWhiteSpace(externalIdentityId))
                 throw new ArgumentException("External identity id cannot be empty.", nameof(externalIdentityId));
 
-            ValidateNickname(nickname);
-
             return new User(id)
             {
                 Email = email,
-                Nickname = nickname,
                 AccountType = accountType,
                 AccountStatus = accountType == AccountType.School
                     ? AccountStatus.PendingValidation
@@ -63,6 +64,20 @@ namespace HSoft.SocialSchool.Domain.Entities.Users
                 PreferredLanguage = preferredLanguage,
                 CreatedAt = DateTime.UtcNow
             };
+        }
+
+        /// <summary>
+        /// Fija el nick del usuario. Solo se puede llamar una vez: el nick es único e inmutable, y lo elige
+        /// el usuario al completar su perfil, no el alta desde Keycloak.
+        /// </summary>
+        public void SetNickname(string nickname)
+        {
+            if (!string.IsNullOrWhiteSpace(Nickname))
+                throw new InvalidOperationException("The nickname can only be set once.");
+
+            ValidateNickname(nickname);
+
+            Nickname = nickname;
         }
 
         /// <summary>

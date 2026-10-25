@@ -64,6 +64,17 @@ variable "keycloak_admin_password" {
   sensitive   = true
 }
 
+variable "keycloak_admin_client_id" {
+  description = "Identificador del cliente confidencial con el que la API consulta la Admin API de Keycloak."
+  type        = string
+}
+
+variable "keycloak_admin_client_secret" {
+  description = "Secreto de ese cliente. Se pasa por TF_VAR_keycloak_admin_client_secret, nunca por un fichero versionado."
+  type        = string
+  sensitive   = true
+}
+
 variable "tags" {
   description = "Etiquetas que se aplican al vault."
   type        = map(string)

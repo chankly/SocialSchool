@@ -250,7 +250,11 @@ de la API.
 
 - `Repositories/`: interfaces de repositorio propias de la capa de aplicación, que extienden
   `IBaseRepository<T>` del dominio. Hay una por agregado (**13**), todas sin métodos adicionales.
-- `Services/`: interfaces de servicios de aplicación (ver `IMigrationService`).
+- `Services/`: interfaces de servicios de aplicación (ver `IMigrationService` y `IKeycloakUsersApi`). La
+  de Keycloak la implementa `Persistence/Services/KeycloakUsersApi` y se registra en `Api` con
+  `AddHttpClient`, porque ese paquete vive en el framework de ASP.NET y no en un proyecto de clase; sus
+  credenciales salen de `Keycloak:Admin:ClientId` y `Keycloak:Admin:ClientSecret` (User Secrets en
+  local, Key Vault en Azure).
 - `Options/`: clases de opciones ligadas a configuración (ver `ApplicationOptions`).
 - `DomainEventHandlers/`: **no existe todavía**. Si se añaden handlers de eventos de dominio, este es
   su sitio.

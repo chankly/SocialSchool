@@ -22,6 +22,19 @@ resource "azurerm_container_app" "api" {
     identity            = var.identity_id
   }
 
+  # Credenciales del cliente con el que la API consulta la Admin API de Keycloak al recibir un registro.
+  secret {
+    name                = var.key_vault_secret_names.keycloak_admin_client_id
+    key_vault_secret_id = var.key_vault_secret_ids.keycloak_admin_client_id
+    identity            = var.identity_id
+  }
+
+  secret {
+    name                = var.key_vault_secret_names.keycloak_admin_client_secret
+    key_vault_secret_id = var.key_vault_secret_ids.keycloak_admin_client_secret
+    identity            = var.identity_id
+  }
+
   template {
     min_replicas = var.min_replicas
     max_replicas = var.max_replicas
@@ -50,6 +63,16 @@ resource "azurerm_container_app" "api" {
       env {
         name  = "Keycloak__Audience"
         value = var.api_audience
+      }
+
+      env {
+        name        = "Keycloak__Admin__ClientId"
+        secret_name = var.key_vault_secret_names.keycloak_admin_client_id
+      }
+
+      env {
+        name        = "Keycloak__Admin__ClientSecret"
+        secret_name = var.key_vault_secret_names.keycloak_admin_client_secret
       }
 
       env {

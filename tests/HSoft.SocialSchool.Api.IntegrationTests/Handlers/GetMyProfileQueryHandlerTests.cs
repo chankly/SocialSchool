@@ -104,7 +104,7 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
                 new FakeSchoolRepository(school));
 
         private static User CreateUser(AccountType accountType) =>
-            User.Create(Guid.NewGuid(), "ada@example.com", "ada", accountType, "Google", ExternalId, "es");
+            User.Create(Guid.NewGuid(), "ada@example.com", accountType, "Google", ExternalId, "es");
 
         private sealed class FakeCurrentUser(string? externalId) : ICurrentUser
         {

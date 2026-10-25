@@ -1,0 +1,38 @@
+{
+    "id": "ba31e1e2-0d4a-4b44-a3a9-641cc4309e7c",
+    "username": "heviaincognito@gmail.com",
+    "firstName": "anonimo",
+    "lastName": "anonimo",
+    "email": "heviaincognito@gmail.com",
+    "emailVerified": false,
+    "attributes": {
+        "userType": [
+            "Athlete"
+        ],
+        "locale": [
+            "en"
+        ]
+    },
+    "enabled": true,
+    "createdTimestamp": 1792256509249,
+    "totp": false,
+    "disableableCredentialTypes": [],
+    "requiredActions": [],
+    "federatedIdentities": [
+        {
+            "identityProvider": "google",
+            "userId": "100507971177487419355",
+            "userName": "heviaincognito@gmail.com"
+        }
+    ],
+    "notBefore": 0,
+    "access": {
+        "manageGroupMembership": true,
+        "delegate": false,
+        "resetPassword": true,
+        "view": true,
+        "mapRoles": true,
+        "impersonate": true,
+        "manage": true
+    }
+}

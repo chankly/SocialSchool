@@ -37,8 +37,12 @@ Representa una cuenta registrada en el sistema, sea cual sea su tipo.
 - `DeletedAt`
 
 ### Reglas de negocio
+- El `Id` de la cuenta es el identificador del usuario en Keycloak: la cuenta y su perfil especializado
+  comparten ese identificador.
 - El `Email` proviene del proveedor de identidad; no hay credenciales propias.
-- El `Nickname` es obligatorio, **único**, **inmutable** y **solo admite letras y números**.
+- El `Nickname` es **único**, **inmutable** y **solo admite letras y números**. La cuenta nace **sin
+  nick** —la crea el alta desde Keycloak— y es el usuario quien lo elige al completar su perfil: hasta
+  entonces el perfil está incompleto.
 - El `AccountType` se elige al crear la cuenta y es **inmutable**.
 - Solo pueden registrarse **mayores de edad**.
 - El `AccountStatus` puede ser activo, pendiente de validación (solo escuelas) o eliminado.
@@ -586,7 +590,8 @@ Configuración del usuario sobre los canales de notificación.
 ## Invariantes globales
 
 1. Toda cuenta es un `User` con **un solo tipo**, inmutable, y un **perfil especializado**.
-2. El `Nickname` es **único, inmutable y solo alfanumérico**.
+2. El `Nickname` es **único, inmutable y solo alfanumérico**, y se fija **una sola vez** al completar el
+   perfil: la cuenta nace sin él.
 3. Solo pueden registrarse **mayores de edad**.
 4. Una `School` tiene **exactamente un** deporte.
 5. Un `Athlete` **solo declara maniobras** de los deportes que practica.

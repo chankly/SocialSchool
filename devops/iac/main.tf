@@ -78,6 +78,10 @@ module "key_vault" {
   mysql_connection_string = local.mysql_connection_string
   mysql_admin_password    = var.mysql_administrator_password
   keycloak_admin_password = var.keycloak_admin_password
+
+  # Cliente confidencial con el que la API lee usuarios de la Admin API al recibir un registro.
+  keycloak_admin_client_id     = var.keycloak_admin_client_id
+  keycloak_admin_client_secret = var.keycloak_admin_client_secret
 }
 
 module "container_apps" {
