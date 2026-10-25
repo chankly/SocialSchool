@@ -21,6 +21,10 @@ namespace HSoft.SocialSchool.Persistence.Configurations
 
             builder.HasIndex(user => user.Nickname).IsUnique().HasDatabaseName("IX_Users_Nickname");
 
+            // Clave de la búsqueda del perfil propio: se consulta por este campo en cada llamada y una
+            // identidad de Keycloak solo puede tener una cuenta.
+            builder.HasIndex(user => user.ExternalIdentityId).IsUnique().HasDatabaseName("IX_Users_ExternalIdentityId");
+
             // La relación se declara desde el lado principal para que EF use el backing field de la colección.
             builder.HasMany(user => user.NotificationPreferences)
                 .WithOne()

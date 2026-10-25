@@ -87,12 +87,14 @@ Está previsto estudiarlo en el futuro como un tipo de usuario propio con panel 
   contraseña, ni verificación de email, ni recuperación de contraseña por parte de este sistema).
 - **Audience mapper:** el cliente de la API en Keycloak necesita un mapper que incluya
   `SocialSchool-Api` en el claim `aud`; sin él, la API rechaza todos los tokens.
-- **Registro: lo hace Keycloak.** El alta —identidad y datos del perfil— se completa en el formulario
-  de Keycloak, **no** en nuestra aplicación: el backend **no** expone endpoints para rellenar el
-  perfil. Cuando alguien se registra, Keycloak **lanza un evento de integración** y el backend
-  materializa la cuenta (`User` + `Athlete`/`School`) en su propia base de datos.
-- **El perfil vive en los dos sitios**: Keycloak lo captura y nuestro dominio lo guarda. Queda por
-  decidir quién manda si el perfil se edita después en Keycloak (ver §15).
+- **Registro: autentica Keycloak, la cuenta la crea el backend.** Keycloak federa el proveedor de
+  identidad y emite el token; al registrarse **lanza un evento de integración** y el backend materializa
+  la cuenta de negocio (`User`) con la identidad y el **tipo de cuenta** elegido. Los **datos del
+  perfil** —nombre, fecha de nacimiento, deportes, contacto…, lo que distingue a un deportista o a una
+  escuela— los completa el usuario **en nuestra aplicación** la primera vez, guiado por su tipo de cuenta.
+- **El perfil vive en nuestro dominio.** Keycloak solo aporta la identidad; los datos del perfil no se
+  capturan allí. `GET /api/user/profile/me` responde `204` mientras el perfil no exista, y es lo que usa
+  la web para mostrar el formulario de alta.
 - **Consecuencia:** un usuario puede estar **autenticado sin cuenta de negocio** mientras el evento no
   se haya procesado. La API debe aceptarlo igualmente: autenticarse no exige tener cuenta.
 - **Campos del deportista:** nombre, apellidos, email, **fecha de nacimiento** (la edad se muestra

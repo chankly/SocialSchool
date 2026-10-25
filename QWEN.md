@@ -19,8 +19,8 @@ Consecuencias prácticas:
 
 - Los **requisitos** están en `openspec/specs/` (ver *Notas Importantes*): es la fuente de verdad.
 - El **modelo de dominio ya está implementado** en `Domain/Entities/` y `Domain/Enumerations/`, y
-  **ya se persiste** (configuraciones EF Core, repositorios y migración inicial). Todavía **no** hay
-  casos de uso.
+  **ya se persiste** (configuraciones EF Core, repositorios y migraciones). Ya hay **casos de uso**, pero
+  pocos: las migraciones y la consulta del perfil propio.
 - No deben deducirse requisitos del código ni inventarse reglas: el código implementa lo que dicen
   los specs, no al contrario.
 - Al añadir funcionalidad nueva hay que distinguir entre **decisiones arquitectónicas reales**
@@ -85,7 +85,8 @@ Carpetas y estructura interna, por proyecto:
   `Primitives/` y `Constants.cs`.
 - **Application**: `Commands/<Feature>/`, `Queries/<Feature>/`, `Behaviors/`,
   `Validators/Commands|Models/`, `Models/<Feature>/`, `Repositories/`, `Services/`, `Options/`,
-  `IoC/Services/`. Hoy las carpetas de casos de uso, DTOs, repositorios y validadores están vacías.
+  `IoC/Services/`. Hay casos de uso en `Commands/Migrations` y `Queries/Profiles`, con sus DTOs en
+  `Models/Profiles`; las carpetas de validadores siguen vacías.
 - **Persistence**: `Configurations/`, `Repositories/`, `Services/`, `Extensions/`, `IoC/Services/`,
   `IoC/Autofac/`, más `MyCompanyDbContext.cs` en la raíz del proyecto.
 - **Api**: `Controllers/`, `Filters/`, `Core/`, `Extensions/`, `Infrastructure/ExceptionHandlers/`,
@@ -280,7 +281,8 @@ constructor.
     (`CurrentValues.SetValues`) en lugar de lanzar.
   - `Save` decide entre `Add` y `Modified` según `Id == Guid.Empty`.
 - Los repositorios concretos son mínimos: heredan de `BaseRepository<T>` e implementan la interfaz
-  de Application. Hay uno por agregado (**13**) y ninguno declara métodos propios todavía.
+  de Application. Hay uno por agregado (**13**); solo `UserRepository` y `AthleteRepository` declaran
+  métodos propios (buscar por identidad externa y cargar el deportista con sus deportes).
 
 ### Módulo Autofac
 
@@ -506,10 +508,12 @@ Los eventos marcados con `IUniqueDomainEvent` se deduplican por valor (de ahí q
 
 ### Migraciones
 
-Hay una migración generada, `InitialCreate` (con su snapshot), en `Persistence/Migrations/`. **No se
-ha aplicado** a ninguna base de datos: `ConnectionStrings:MyCompany` sigue siendo la cadena de
-ejemplo inválida. El `DbContext` vive en Persistence pero el startup project es Api, así que al
-generar migraciones hay que indicar ambos proyectos (ver sección de comandos más abajo).
+Hay dos migraciones en `Persistence/Migrations/`: `InitialCreate` y `AddExternalIdentityIdIndex`, ambas
+**aplicadas** el 2026-10-25 a la base `api` del servidor MySQL del entorno `dv` (la última añade el índice
+único de `Users.ExternalIdentityId`). `appsettings.json` sigue llevando una cadena de ejemplo: la real
+sale de User Secrets. El `DbContext` vive en Persistence pero el startup project es Api, así que al
+generar migraciones hay que indicar ambos proyectos **y prefijar las rutas con `src\`** si se ejecuta
+desde la raíz (ver sección de comandos más abajo).
 
 ---
 
@@ -714,8 +718,8 @@ Decisiones de modelado vigentes:
   solicitud de amistad, ausencia de bloqueo, unicidad del nick, quién puede ver qué) corresponde al
   caso de uso; las entidades sólo protegen sus propios invariantes. Está anotado en las XML docs de
   `FriendRequest`.
-- **Pendiente de construir**: casos de uso, migración aplicada a una base de datos y —si se
-  quieren— eventos de dominio (hoy no hay ninguno definido).
+- **Pendiente de construir**: el resto de casos de uso, la migración aplicada a una base de datos y
+  —si se quieren— eventos de dominio (hoy no hay ninguno definido).
 
 ### Restos de plantilla que siguen presentes
 
