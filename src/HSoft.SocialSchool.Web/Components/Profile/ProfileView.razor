@@ -1,0 +1,294 @@
+@inject ISportsService SportsService
+
+<article class="profile-view">
+    @if (Profile.AccountType == AccountType.Athlete && Athlete is null)
+    {
+        <Alert Tone="UiTone.Warning" Title="Respuesta incompleta" IconName="alert">
+            <p class="alert-text">La respuesta 200 no incluye el bloque <code>athlete</code>.</p>
+        </Alert>
+    }
+    @if (Profile.AccountType == AccountType.School && School is null)
+    {
+        <Alert Tone="UiTone.Warning" Title="Respuesta incompleta" IconName="alert">
+            <p class="alert-text">La respuesta 200 no incluye el bloque <code>school</code>.</p>
+        </Alert>
+    }
+
+    <section class="profile-hero card">
+        <div class="profile-hero-bg" aria-hidden="true"></div>
+        <div class="profile-hero-body">
+            <Avatar ImageUrl="@PictureUrl" Name="@DisplayName" Size="xl" CssClass="profile-avatar" />
+            <div class="profile-identity">
+                <div class="profile-name-row">
+                    <h2>@DisplayName</h2>
+                    <Pill Text="@Profile.AccountType.ToDisplayName()" Tone="UiTone.Brand" />
+                    <Pill Text="@Profile.AccountStatus.ToDisplayName()" Tone="@StatusTone" Icon="@StatusIcon" />
+                </div>
+                <p class="profile-nick"><span class="nick-at">@("@")</span>@Profile.Nickname</p>
+                <p class="profile-meta">
+                    <span class="meta-item"><Icon Name="map-pin" Size="16" />@Location</span>
+                    <span class="meta-item"><Icon Name="mail" Size="16" />@Profile.Email</span>
+                    @if (School is not null)
+                    {
+                        <span class="meta-item"><Icon Name="shield" Size="16" />@SchoolSportName</span>
+                    }
+                </p>
+            </div>
+        </div>
+    </section>
+
+    @if (Profile.AccountStatus == AccountStatus.PendingValidation)
+    {
+        <Alert Tone="UiTone.Warning" Title="Escuela pendiente de validación" IconName="clock">
+            <p class="alert-text">
+                Tu escuela ya tiene perfil, pero el equipo de SocialSchool todavía no ha validado la cuenta.
+                El estado se muestra en el perfil como información para el usuario.
+            </p>
+        </Alert>
+    }
+
+    @if (Athlete is { } athlete)
+    {
+        <div class="detail-grid">
+            <article class="card">
+                <div class="card-head">
+                    <h3>Biografía</h3>
+                </div>
+                <div class="card-body">
+                    <p class="prose">@BiographyText</p>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <h3>Datos personales</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="info-list">
+                        <div class="info-row">
+                            <dt>Nacimiento</dt>
+                            <dd>@BirthDateText <span class="muted">(@AgeText)</span></dd>
+                        </div>
+                        <div class="info-row">
+                            <dt>País</dt>
+                            <dd>@CountryCatalog.GetName(athlete.Country)</dd>
+                        </div>
+                        <div class="info-row">
+                            <dt>Ciudad</dt>
+                            <dd>@athlete.City</dd>
+                        </div>
+                        <div class="info-row">
+                            <dt>Correo</dt>
+                            <dd>@Profile.Email</dd>
+                        </div>
+                    </dl>
+                </div>
+            </article>
+
+            <article class="card span-2">
+                <div class="card-head">
+                    <h3>Deportes que practica</h3>
+                    <span class="muted">@athlete.PracticedSports.Count</span>
+                </div>
+                <div class="card-body">
+                    @if (athlete.PracticedSports.Count == 0)
+                    {
+                        <p class="muted">No ha declarado ningún deporte.</p>
+                    }
+                    else
+                    {
+                        <div class="chip-row">
+                            @foreach (var sport in athlete.PracticedSports)
+                            {
+                                <Pill @key="sport.Id" Text="@sport.Name" Tone="UiTone.Neutral" Icon="trophy" />
+                            }
+                        </div>
+                    }
+                </div>
+            </article>
+        </div>
+    }
+    else if (School is { } school)
+    {
+        <div class="detail-grid">
+            <article class="card span-2">
+                <div class="card-head">
+                    <h3>Sobre la escuela</h3>
+                </div>
+                <div class="card-body">
+                    <p class="prose">@school.Description</p>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <h3>Ficha</h3>
+                </div>
+                <div class="card-body">
+                    <dl class="info-list">
+                        <div class="info-row">
+                            <dt>Deporte</dt>
+                            <dd>@SchoolSportName</dd>
+                        </div>
+                        <div class="info-row">
+                            <dt>País</dt>
+                            <dd>@CountryCatalog.GetName(school.Country)</dd>
+                        </div>
+                        <div class="info-row">
+                            <dt>Ciudad</dt>
+                            <dd>@school.City</dd>
+                        </div>
+                        <div class="info-row">
+                            <dt>Estado</dt>
+                            <dd>@Profile.AccountStatus.ToDisplayName()</dd>
+                        </div>
+                    </dl>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-head">
+                    <h3>Contacto</h3>
+                </div>
+                <div class="card-body contact-list">
+                    <a class="contact-row" href="mailto:@school.ContactEmail">
+                        <Icon Name="mail" Size="16" />
+                        <span>@school.ContactEmail</span>
+                    </a>
+
+                    @if (!string.IsNullOrWhiteSpace(school.Phone))
+                    {
+                        <a class="contact-row" href="tel:@school.Phone">
+                            <Icon Name="phone" Size="16" />
+                            <span>@school.Phone</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="contact-row is-muted">
+                            <Icon Name="phone" Size="16" />
+                            <span>Sin teléfono</span>
+                        </span>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(school.Website))
+                    {
+                        <a class="contact-row" href="@school.Website" target="_blank" rel="noopener noreferrer">
+                            <Icon Name="globe" Size="16" />
+                            <span>@school.Website</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="contact-row is-muted">
+                            <Icon Name="globe" Size="16" />
+                            <span>Sin sitio web</span>
+                        </span>
+                    }
+                </div>
+            </article>
+        </div>
+    }
+
+    <div class="profile-footnote">
+        <Icon Name="info" Size="16" />
+        <p>
+            Esta vista representa el perfil propio. El contrato de <code>GET /api/user/profile/me</code>
+            no incluye maniobras, asistencias ni servicios de la escuela; esos datos llegarán con las
+            pantallas de detalle.
+        </p>
+    </div>
+</article>
+
+@code {
+    /// <summary>Perfil que se muestra.</summary>
+    [Parameter]
+    public ProfileResponse Profile { get; set; } = default!;
+
+    private AthleteProfileResponse? Athlete => Profile.Athlete;
+
+    private SchoolProfileResponse? School => Profile.School;
+
+    private IReadOnlyList<SportResponse> _sports = [];
+
+    private string DisplayName => Profile.AccountType switch
+    {
+        AccountType.Athlete when Athlete is { } athlete => $"{athlete.FirstName} {athlete.LastName}".Trim(),
+        AccountType.School when School is { } school => school.Name,
+        _ => Profile.Nickname
+    };
+
+    private string? PictureUrl => Profile.AccountType == AccountType.Athlete
+        ? Athlete?.ProfilePictureUrl
+        : School?.LogoUrl;
+
+    private string Location
+    {
+        get
+        {
+            var country = Athlete?.Country ?? School?.Country;
+            var city = Athlete?.City ?? School?.City;
+            var countryName = CountryCatalog.GetName(country);
+            return string.IsNullOrWhiteSpace(city) ? countryName : $"{city}, {countryName}";
+        }
+    }
+
+    private string BiographyText =>
+        string.IsNullOrWhiteSpace(Athlete?.Biography)
+            ? "Todavía no ha escrito una biografía."
+            : Athlete!.Biography!;
+
+    private string BirthDateText => Athlete is null
+        ? "—"
+        : Athlete.DateOfBirth.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+    private string AgeText => Athlete is null ? "—" : $"{CalculateAge(Athlete.DateOfBirth)} años";
+
+    private string SchoolSportName
+    {
+        get
+        {
+            if (School is not { } school)
+            {
+                return "—";
+            }
+
+            return _sports.FirstOrDefault(sport => sport.Id == school.SportId)?.Name ?? "Deporte no disponible";
+        }
+    }
+
+    private UiTone StatusTone => Profile.AccountStatus switch
+    {
+        AccountStatus.Active => UiTone.Success,
+        AccountStatus.PendingValidation => UiTone.Warning,
+        AccountStatus.Deleted => UiTone.Danger,
+        _ => UiTone.Neutral
+    };
+
+    private string StatusIcon => Profile.AccountStatus switch
+    {
+        AccountStatus.Active => "check",
+        AccountStatus.PendingValidation => "clock",
+        AccountStatus.Deleted => "x",
+        _ => "info"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Se carga siempre para que el componente siga siendo válido si la sesión cambia
+        // de un perfil de deportista a uno de escuela sin desmontarlo.
+        _sports = await SportsService.GetAllAsync();
+    }
+
+    private static int CalculateAge(DateOnly dateOfBirth)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var age = today.Year - dateOfBirth.Year;
+        if (dateOfBirth > today.AddYears(-age))
+        {
+            age--;
+        }
+
+        return age;
+    }
+}

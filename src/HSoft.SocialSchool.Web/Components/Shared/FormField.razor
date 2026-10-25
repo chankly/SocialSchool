@@ -1,0 +1,40 @@
+<div class="form-field @(SpanTwo ? "span-2" : null)">
+    <label class="form-label" for="@For">
+        @Label
+        @if (Required)
+        {
+            <span class="req" title="Obligatorio">*</span>
+        }
+    </label>
+    @ChildContent
+    @if (!string.IsNullOrWhiteSpace(Help))
+    {
+        <p class="form-help">@Help</p>
+    }
+</div>
+
+@code {
+    /// <summary>Etiqueta visible.</summary>
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>Identificador del campo al que apunta la etiqueta.</summary>
+    [Parameter]
+    public string? For { get; set; }
+
+    /// <summary>Marca el campo como obligatorio.</summary>
+    [Parameter]
+    public bool Required { get; set; }
+
+    /// <summary>Texto de ayuda bajo el campo.</summary>
+    [Parameter]
+    public string? Help { get; set; }
+
+    /// <summary>Ocupa las dos columnas de la rejilla.</summary>
+    [Parameter]
+    public bool SpanTwo { get; set; }
+
+    /// <summary>Campo de formulario.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,249 @@
+@inject IProfileService ProfileService
+@inject ISportsService SportsService
+@inject IValidator<CreateAthleteProfileRequest> Validator
+@implements IDisposable
+
+<EditForm EditContext="_editContext" OnSubmit="SubmitAsync" class="card profile-form">
+    <div class="card-body">
+        <div class="form-intro">
+            <h2>Completa tu perfil de deportista</h2>
+            <p>
+                Estos datos se guardan una sola vez, junto con el nick. La API responde
+                <strong>204 No Content</strong> hasta que el perfil existe.
+            </p>
+        </div>
+
+        <ValidationSummary class="form-summary" />
+
+        <div class="form-grid">
+            <FormField Label="Nick" Required="true" For="athlete-nickname" SpanTwo="true"
+                       Help="Único, inmutable y solo alfanumérico. No se podrá cambiar después.">
+                <InputText id="athlete-nickname" class="input" @bind-Value="_model.Nickname"
+                           autocomplete="off" placeholder="anaotxoa" />
+                <ValidationMessage For="() => _model.Nickname" class="field-error" />
+            </FormField>
+
+            <FormField Label="Nombre" Required="true" For="athlete-first-name">
+                <InputText id="athlete-first-name" class="input" @bind-Value="_model.FirstName"
+                           autocomplete="given-name" placeholder="Ana" />
+                <ValidationMessage For="() => _model.FirstName" class="field-error" />
+            </FormField>
+
+            <FormField Label="Apellidos" Required="true" For="athlete-last-name">
+                <InputText id="athlete-last-name" class="input" @bind-Value="_model.LastName"
+                           autocomplete="family-name" placeholder="Otxoa" />
+                <ValidationMessage For="() => _model.LastName" class="field-error" />
+            </FormField>
+
+            <FormField Label="Fecha de nacimiento" Required="true" For="athlete-birthdate">
+                <InputDate id="athlete-birthdate" class="input" @bind-Value="_model.DateOfBirth"
+                           max="@MaxBirthDate" />
+                <ValidationMessage For="() => _model.DateOfBirth" class="field-error" />
+            </FormField>
+
+            <FormField Label="País" Required="true" For="athlete-country">
+                <InputSelect id="athlete-country" class="input" @bind-Value="_model.Country">
+                    @foreach (var country in CountryCatalog.All)
+                    {
+                        <option value="@country.Code">@country.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => _model.Country" class="field-error" />
+            </FormField>
+
+            <FormField Label="Ciudad" Required="true" For="athlete-city">
+                <InputText id="athlete-city" class="input" @bind-Value="_model.City"
+                           autocomplete="address-level2" placeholder="San Sebastián" />
+                <ValidationMessage For="() => _model.City" class="field-error" />
+            </FormField>
+
+            <FormField Label="Foto de perfil" For="athlete-picture"
+                       Help="URL pública de una imagen. En la maqueta no se suben archivos.">
+                <InputText id="athlete-picture" class="input" @bind-Value="_model.ProfilePictureUrl"
+                           placeholder="https://…" />
+                <ValidationMessage For="() => _model.ProfilePictureUrl" class="field-error" />
+            </FormField>
+
+            <FormField Label="Biografía" For="athlete-biography" SpanTwo="true"
+                       Help="Máximo 500 caracteres. Se mostrará en tu perfil.">
+                <InputTextArea id="athlete-biography" class="input" @bind-Value="_model.Biography"
+                               rows="4" maxlength="500" placeholder="Cuéntanos qué practicas y dónde sueles entrenar." />
+                <ValidationMessage For="() => _model.Biography" class="field-error" />
+            </FormField>
+
+            <FormField Label="Deportes que practicas" Required="true" SpanTwo="true"
+                       Help="Después solo podrás declarar maniobras de los deportes que marques aquí.">
+                @if (_loadingSports)
+                {
+                    <p class="muted">Cargando catálogo de deportes…</p>
+                }
+                else if (_sportsError is not null)
+                {
+                    <Alert Tone="UiTone.Danger" Title="No se ha cargado el catálogo" IconName="alert">
+                        <p class="alert-text">@_sportsError</p>
+                        <button type="button" class="btn btn-outline btn-sm" @onclick="LoadSportsAsync">
+                            Reintentar
+                        </button>
+                    </Alert>
+                }
+                else
+                {
+                    <div class="chip-grid">
+                        @foreach (var sport in _sports)
+                        {
+                            <label class="chip-toggle @(IsSportSelected(sport.Id) ? "is-selected" : null)" @key="sport.Id">
+                                <input type="checkbox" checked="@IsSportSelected(sport.Id)"
+                                       @onchange="e => ToggleSport(sport.Id)" />
+                                <span>@sport.Name</span>
+                            </label>
+                        }
+                    </div>
+                    <ValidationMessage For="() => _model.PracticedSportIds" class="field-error" />
+                }
+            </FormField>
+        </div>
+
+        @if (_submitError is not null)
+        {
+            <Alert Tone="UiTone.Danger" Title="No se ha podido crear el perfil" IconName="alert" Message="@_submitError" />
+        }
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" disabled="@(_busy || _loadingSports)">
+                <Icon Name="check" Size="18" />
+                @(_busy ? "Creando perfil…" : "Crear mi perfil")
+            </button>
+            <p class="form-hint">
+                <Icon Name="lock" Size="14" />
+                El nick y los deportes practicados se fijan en este paso.
+            </p>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private readonly CreateAthleteProfileRequest _model = new();
+    private EditContext _editContext = default!;
+    private ValidationMessageStore _messageStore = default!;
+    private IReadOnlyList<SportResponse> _sports = [];
+    private bool _loadingSports = true;
+    private string? _sportsError;
+    private string? _submitError;
+    private bool _busy;
+
+    /// <summary>Se invoca con el perfil recién creado.</summary>
+    [Parameter]
+    public EventCallback<ProfileResponse> OnCreated { get; set; }
+
+    private string MaxBirthDate => DateTime.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _editContext = new EditContext(_model);
+        _messageStore = new ValidationMessageStore(_editContext);
+        _editContext.OnFieldChanged += HandleFieldChanged;
+
+        await LoadSportsAsync();
+    }
+
+    public void Dispose()
+    {
+        if (_editContext is not null)
+        {
+            _editContext.OnFieldChanged -= HandleFieldChanged;
+        }
+    }
+
+    private async Task LoadSportsAsync()
+    {
+        _loadingSports = true;
+        _sportsError = null;
+
+        try
+        {
+            _sports = await SportsService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            _sportsError = "El catálogo ficticio no ha respondido. Puedes intentarlo de nuevo.";
+        }
+        finally
+        {
+            _loadingSports = false;
+        }
+    }
+
+    private void HandleFieldChanged(object? sender, FieldChangedEventArgs args)
+    {
+        _messageStore.Clear(args.FieldIdentifier);
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private bool IsSportSelected(Guid sportId) => _model.PracticedSportIds.Contains(sportId);
+
+    private void ToggleSport(Guid sportId)
+    {
+        if (!_model.PracticedSportIds.Remove(sportId))
+        {
+            _model.PracticedSportIds.Add(sportId);
+        }
+
+        _messageStore.Clear(new FieldIdentifier(_model, nameof(_model.PracticedSportIds)));
+        _editContext.NotifyValidationStateChanged();
+    }
+
+    private async Task SubmitAsync(EditContext context)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        _submitError = null;
+        _messageStore.Clear();
+        _editContext.NotifyValidationStateChanged();
+
+        var validation = await Validator.ValidateAsync(_model);
+        if (!validation.IsValid)
+        {
+            _messageStore.AddErrors(_model, validation.Errors);
+            _editContext.NotifyValidationStateChanged();
+            return;
+        }
+
+        _busy = true;
+
+        try
+        {
+            var result = await ProfileService.CreateAthleteProfileAsync(_model);
+
+            switch (result)
+            {
+                case ProfileSaveResult.Success success:
+                    await OnCreated.InvokeAsync(success.Profile);
+                    break;
+
+                case ProfileSaveResult.Conflict conflict:
+                    _messageStore.Add(new FieldIdentifier(_model, conflict.Field), conflict.Message);
+                    _editContext.NotifyValidationStateChanged();
+                    break;
+
+                case ProfileSaveResult.Unauthorized:
+                    _submitError = "La sesión ha caducado. Elige otra sesión de demo en la cabecera.";
+                    break;
+
+                case ProfileSaveResult.Failure failure:
+                    _submitError = failure.Message;
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            _submitError = "No se ha podido crear el perfil simulado. Inténtalo de nuevo.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

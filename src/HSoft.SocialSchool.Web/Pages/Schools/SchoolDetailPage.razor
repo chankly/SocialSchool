@@ -1,0 +1,329 @@
+@page "/schools/{Id:guid}"
+@implements IDisposable
+@inject ISchoolsService SchoolsService
+@inject IFriendsService FriendsService
+@inject ISessionService Session
+
+<a class="back-link" href="schools">
+    <Icon Name="arrow-right" Size="16" CssClass="icon-back" />
+    Volver a escuelas
+</a>
+
+<PageHeader Eyebrow="Perfil público" Title="@(_school?.School.Name ?? "Escuela")"
+            Subtitle="Perfil público de la escuela, con sus servicios y la lista de asistentes.">
+    <Actions>
+        <Pill Text="Escuela" Tone="UiTone.Brand" Icon="school" />
+    </Actions>
+</PageHeader>
+
+@if (!Session.IsAuthenticated)
+{
+    <section class="auth-card card">
+        <div class="card-body">
+            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
+            <h2>Necesitas una sesión para ver esta escuela</h2>
+            <p>Los perfiles públicos de escuela están disponibles para usuarios autenticados.</p>
+            <div class="button-row">
+                <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
+                    <Icon Name="user" Size="18" />
+                    Entrar como deportista
+                </button>
+                <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
+                    Entrar como escuela
+                </button>
+            </div>
+        </div>
+    </section>
+}
+else if (_loading)
+{
+    <LoadingPanel Message="Cargando el perfil público de la escuela…" />
+}
+else if (_error is not null)
+{
+    <Alert Tone="UiTone.Danger" Title="No se ha podido cargar la escuela" IconName="alert">
+        <p class="alert-text">@_error</p>
+        <button type="button" class="btn btn-outline btn-sm" @onclick="LoadAsync">Reintentar</button>
+    </Alert>
+}
+else if (_school is null)
+{
+    <EmptyState Icon="compass" Title="Esta escuela no existe en la maqueta"
+                Message="El identificador no corresponde a ninguna de las escuelas ficticias.">
+        <a class="btn btn-primary btn-sm" href="schools">Volver al directorio</a>
+    </EmptyState>
+}
+else if (_school is { } detail)
+{
+    <section class="profile-hero card">
+        <div class="profile-hero-bg" aria-hidden="true"></div>
+        <div class="profile-hero-body">
+            <Avatar ImageUrl="@detail.School.LogoUrl" Name="@detail.School.Name" Size="xl" CssClass="profile-avatar" />
+            <div class="profile-identity">
+                <div class="profile-name-row">
+                    <h2>@detail.School.Name</h2>
+                    <Pill Text="@(detail.School.IsValidated ? "Validada" : "Pendiente")"
+                          Tone="@(detail.School.IsValidated ? UiTone.Success : UiTone.Warning)"
+                          Icon="shield" />
+                </div>
+                <p class="profile-nick"><span class="nick-at">@("@")</span>@detail.School.Nickname</p>
+                <p class="profile-meta">
+                    <span class="meta-item"><Icon Name="map-pin" Size="16" />@detail.School.City, @CountryCatalog.GetName(detail.School.Country)</span>
+                    <span class="meta-item"><Icon Name="trophy" Size="16" />@detail.School.SportName</span>
+                    <span class="meta-item"><Icon Name="users" Size="16" />@detail.School.AttendeesCount asistentes</span>
+                </p>
+            </div>
+        </div>
+    </section>
+
+    @if (_actionMessage is not null)
+    {
+        <Alert Tone="@(_actionFailed ? UiTone.Danger : UiTone.Success)"
+               Title="@(_actionFailed ? "No se ha enviado la solicitud" : "Solicitud enviada")"
+               IconName="@(_actionFailed ? "alert" : "check")"
+               Message="@_actionMessage" />
+    }
+
+    <div class="detail-grid">
+        <article class="card span-2">
+            <div class="card-head">
+                <h3>Sobre la escuela</h3>
+            </div>
+            <div class="card-body">
+                <p class="prose">@detail.School.Description</p>
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h3>Contacto</h3>
+            </div>
+            <div class="card-body contact-list">
+                @if (!string.IsNullOrWhiteSpace(detail.ContactEmail))
+                {
+                    <a class="contact-row" href="mailto:@detail.ContactEmail">
+                        <Icon Name="mail" Size="16" />
+                        <span>@detail.ContactEmail</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="contact-row is-muted">
+                        <Icon Name="mail" Size="16" />
+                        <span>Sin correo de contacto</span>
+                    </span>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(detail.Phone))
+                {
+                    <a class="contact-row" href="tel:@detail.Phone">
+                        <Icon Name="phone" Size="16" />
+                        <span>@detail.Phone</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="contact-row is-muted">
+                        <Icon Name="phone" Size="16" />
+                        <span>Sin teléfono</span>
+                    </span>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(detail.Website))
+                {
+                    <a class="contact-row" href="@detail.Website" target="_blank" rel="noopener noreferrer">
+                        <Icon Name="globe" Size="16" />
+                        <span>@detail.Website</span>
+                    </a>
+                }
+                else
+                {
+                    <span class="contact-row is-muted">
+                        <Icon Name="globe" Size="16" />
+                        <span>Sin sitio web</span>
+                    </span>
+                }
+            </div>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h3>Amistad y asistencia</h3>
+            </div>
+            <div class="card-body">
+                @if (Session.AccountType == AccountType.Athlete)
+                {
+                    <p class="small">
+                        Puedes enviar una solicitud de amistad. El vínculo de asistencia se pedirá desde
+                        la ficha de la escuela cuando el backend exponga ese endpoint.
+                    </p>
+                    <button type="button" class="btn btn-primary btn-sm" disabled="@_actionBusy"
+                            @onclick="SendFriendRequestAsync">
+                        <Icon Name="users" Size="16" />
+                        Enviar solicitud de amistad
+                    </button>
+                }
+                else
+                {
+                    <p class="muted small">
+                        Las escuelas no pueden ser amigas entre sí. Este perfil es público para el resto
+                        de usuarios autenticados.
+                    </p>
+                }
+            </div>
+        </article>
+
+        <article class="card span-2">
+            <div class="card-head">
+                <h3>Servicios</h3>
+                <Pill Text="@($"{detail.Services.Count}")" Tone="UiTone.Neutral" />
+            </div>
+            <div class="card-body">
+                @if (detail.Services.Count == 0)
+                {
+                    <p class="muted">Esta escuela todavía no ha publicado servicios.</p>
+                }
+                else
+                {
+                    <ul class="service-list">
+                        @foreach (var service in detail.Services)
+                        {
+                            <li class="service-row" @key="service.Id">
+                                <div class="service-text">
+                                    <strong>@service.Name</strong>
+                                    <p>@service.Description</p>
+                                    <span class="muted small"><Icon Name="calendar" Size="14" /> @service.Schedule</span>
+                                </div>
+                                <span class="service-price">@FormatPrice(service.Price)</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </article>
+
+        <article class="card span-2">
+            <div class="card-head">
+                <h3>Asistentes</h3>
+                <Pill Text="@($"{detail.Attendees.Count}")" Tone="UiTone.Neutral" />
+            </div>
+            <div class="card-body">
+                @if (detail.Attendees.Count == 0)
+                {
+                    <p class="muted">No hay deportistas con asistencia confirmada.</p>
+                }
+                else
+                {
+                    <ul class="attendee-grid">
+                        @foreach (var attendee in detail.Attendees)
+                        {
+                            <li class="attendee-card" @key="attendee.Id">
+                                <Avatar Name="@attendee.DisplayName" Size="md" />
+                                <div class="attendee-text">
+                                    <strong>@attendee.DisplayName</strong>
+                                    <span>@attendee.Subtitle</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                <p class="muted small">
+                    La lista muestra nombre y foto. Abrir el perfil completo de un deportista exige ser
+                    su amigo.
+                </p>
+            </div>
+        </article>
+    </div>
+}
+
+@code {
+    private SchoolDetailResponse? _school;
+    private bool _loading = true;
+    private string? _error;
+    private bool _actionBusy;
+    private string? _actionMessage;
+    private bool _actionFailed;
+
+    /// <summary>Identificador de la escuela de la ruta.</summary>
+    [Parameter]
+    public Guid Id { get; set; }
+
+    protected override void OnInitialized() => Session.Changed += HandleSessionChanged;
+
+    public void Dispose() => Session.Changed -= HandleSessionChanged;
+
+    private void HandleSessionChanged() => _ = ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _error = null;
+        _actionMessage = null;
+
+        if (!Session.IsAuthenticated)
+        {
+            _school = null;
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+        _school = null;
+
+        try
+        {
+            _school = await SchoolsService.GetByIdAsync(Id);
+        }
+        catch (Exception)
+        {
+            _error = "El perfil ficticio de la escuela no ha respondido.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+
+    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+
+    private async Task SendFriendRequestAsync()
+    {
+        if (_school is not { } detail || _actionBusy)
+        {
+            return;
+        }
+
+        _actionBusy = true;
+        _actionMessage = null;
+
+        try
+        {
+            var result = await FriendsService.SendRequestAsync(detail.School.Id);
+            _actionFailed = !result.IsSuccess;
+            _actionMessage = result.IsSuccess
+                ? "La solicitud aparecerá en Amistades → Enviadas."
+                : result.Error;
+        }
+        catch (Exception)
+        {
+            _actionFailed = true;
+            _actionMessage = "No se ha podido enviar la solicitud simulada.";
+        }
+        finally
+        {
+            _actionBusy = false;
+        }
+    }
+
+    private static string FormatPrice(decimal price) =>
+        $"{price.ToString("0.##", CultureInfo.InvariantCulture)} €";
+}

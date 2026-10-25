@@ -1,0 +1,13 @@
+using HSoft.SocialSchool.Web;
+using HSoft.SocialSchool.Web.Extensions;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+
+var builder = WebAssemblyHostBuilder.CreateDefault(args);
+
+builder.RootComponents.Add<App>("#app");
+builder.RootComponents.Add<HeadOutlet>("head::after");
+
+builder.Services.AddWebAppServices(builder.Configuration);
+
+await builder.Build().RunAsync();
