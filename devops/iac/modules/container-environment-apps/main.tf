@@ -8,7 +8,7 @@ resource "azurerm_log_analytics_workspace" "log_workspace" {
 }
 
 resource "azurerm_container_app_environment" "environment" {
-  name                       = "socialschool-cae-${var.environment}"
+  name                       = "socialschool-cappenv-${var.environment}"
   resource_group_name        = var.resource_group_name
   location                   = var.resource_group_location
   log_analytics_workspace_id = azurerm_log_analytics_workspace.log_workspace.id
