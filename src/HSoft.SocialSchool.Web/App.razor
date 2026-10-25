@@ -1,0 +1,18 @@
+<Router AppAssembly="@typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="page">
+                <div class="empty-state empty-state-page">
+                    <span class="empty-icon"><Icon Name="compass" Size="30" /></span>
+                    <h1>Esta página no existe</h1>
+                    <p>La dirección que has abierto no corresponde a ninguna pantalla de la maqueta.</p>
+                    <a class="btn btn-primary" href="">Volver al inicio</a>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

@@ -1,0 +1,35 @@
+<header class="page-header">
+    <div class="page-header-text">
+        @if (!string.IsNullOrWhiteSpace(Eyebrow))
+        {
+            <p class="eyebrow">@Eyebrow</p>
+        }
+        <h1>@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Subtitle))
+        {
+            <p class="page-subtitle">@Subtitle</p>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="page-actions">@Actions</div>
+    }
+</header>
+
+@code {
+    /// <summary>Texto pequeño sobre el título.</summary>
+    [Parameter]
+    public string Eyebrow { get; set; } = string.Empty;
+
+    /// <summary>Título principal de la página.</summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>Descripción de la página.</summary>
+    [Parameter]
+    public string Subtitle { get; set; } = string.Empty;
+
+    /// <summary>Acciones alineadas a la derecha.</summary>
+    [Parameter]
+    public RenderFragment? Actions { get; set; }
+}

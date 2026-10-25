@@ -1,0 +1,38 @@
+<div class="alert alert-@ToneClass" role="status">
+    <span class="alert-icon"><Icon Name="@IconName" Size="18" /></span>
+    <div class="alert-body">
+        @if (!string.IsNullOrWhiteSpace(Title))
+        {
+            <p class="alert-title">@Title</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(Message))
+        {
+            <p class="alert-text">@Message</p>
+        }
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>Matiz visual del aviso.</summary>
+    [Parameter]
+    public UiTone Tone { get; set; } = UiTone.Info;
+
+    /// <summary>Título breve.</summary>
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>Mensaje principal.</summary>
+    [Parameter]
+    public string? Message { get; set; }
+
+    /// <summary>Icono que acompaña al aviso.</summary>
+    [Parameter]
+    public string IconName { get; set; } = "info";
+
+    /// <summary>Contenido adicional, como botones o enlaces.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private string ToneClass => Tone.ToCss();
+}

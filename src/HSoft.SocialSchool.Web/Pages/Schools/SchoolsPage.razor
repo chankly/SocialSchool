@@ -1,0 +1,203 @@
+@page "/schools"
+@implements IDisposable
+@inject ISchoolsService SchoolsService
+@inject ISportsService SportsService
+@inject ISessionService Session
+
+<PageHeader Eyebrow="Comunidad" Title="Escuelas"
+            Subtitle="Perfiles públicos de escuelas de deporte. El catálogo y los filtros se resuelven en memoria.">
+    <Actions>
+        <Pill Text="@($"{FilteredSchools.Count} de {_schools.Count}")" Tone="UiTone.Info" Icon="school" />
+    </Actions>
+</PageHeader>
+
+@if (!Session.IsAuthenticated)
+{
+    <section class="auth-card card">
+        <div class="card-body">
+            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
+            <h2>Necesitas una sesión para ver el directorio</h2>
+            <p>Las consultas de escuelas requieren un usuario autenticado. Simula el regreso del login para continuar.</p>
+            <div class="button-row">
+                <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
+                    <Icon Name="user" Size="18" />
+                    Entrar como deportista
+                </button>
+                <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
+                    Entrar como escuela
+                </button>
+            </div>
+        </div>
+    </section>
+}
+else if (_loading)
+{
+    <LoadingPanel Message="Cargando el directorio simulado de escuelas…" />
+}
+else if (_error is not null)
+{
+    <Alert Tone="UiTone.Danger" Title="No se ha podido cargar el directorio" IconName="alert">
+        <p class="alert-text">@_error</p>
+        <button type="button" class="btn btn-outline btn-sm" @onclick="LoadAsync">Reintentar</button>
+    </Alert>
+}
+else
+{
+    <section class="filter-bar card">
+        <div class="search-box">
+            <Icon Name="search" Size="18" />
+            <input class="search-input" @bind="_query" @bind:event="oninput"
+                   placeholder="Busca por nombre, ciudad o deporte"
+                   aria-label="Buscar escuelas" />
+            @if (!string.IsNullOrWhiteSpace(_query))
+            {
+                <button type="button" class="search-clear" aria-label="Limpiar búsqueda" @onclick="ClearFilters">
+                    <Icon Name="x" Size="16" />
+                </button>
+            }
+        </div>
+
+        <div class="chip-row">
+            <button type="button" class="chip @(_sportFilter is null ? "is-selected" : null)"
+                    @onclick="() => SelectSport(null)">
+                Todos los deportes
+            </button>
+            @foreach (var sport in _sports)
+            {
+                <button type="button" class="chip @(_sportFilter == sport.Id ? "is-selected" : null)"
+                        @key="sport.Id"
+                        @onclick="() => SelectSport(sport.Id)">
+                    @sport.Name
+                </button>
+            }
+        </div>
+    </section>
+
+    @if (FilteredSchools.Count == 0)
+    {
+        <EmptyState Icon="search" Title="Ninguna escuela coincide con el filtro"
+                    Message="Prueba con otro deporte o limpia la búsqueda.">
+            <button type="button" class="btn btn-outline btn-sm" @onclick="ClearFilters">Limpiar filtros</button>
+        </EmptyState>
+    }
+    else
+    {
+        <div class="school-grid">
+            @foreach (var school in FilteredSchools)
+            {
+                <a class="school-card card" href="schools/@school.Id" @key="school.Id">
+                    <div class="school-card-top">
+                        <Avatar ImageUrl="@school.LogoUrl" Name="@school.Name" Size="lg" />
+                        <div class="school-card-title">
+                            <strong>@school.Name</strong>
+                            <span>@("@")@school.Nickname</span>
+                        </div>
+                        <Pill Text="@(school.IsValidated ? "Validada" : "Pendiente")"
+                              Tone="@(school.IsValidated ? UiTone.Success : UiTone.Warning)"
+                              Icon="shield" />
+                    </div>
+
+                    <p class="school-card-description">@school.Description</p>
+
+                    <div class="school-card-meta">
+                        <span class="meta-item"><Icon Name="trophy" Size="15" />@school.SportName</span>
+                        <span class="meta-item">
+                            <Icon Name="map-pin" Size="15" />
+                            @school.City, @CountryCatalog.GetName(school.Country)
+                        </span>
+                    </div>
+
+                    <div class="school-card-footer">
+                        <span class="meta-item"><Icon Name="users" Size="15" />@school.AttendeesCount asistentes</span>
+                        <span class="card-link">
+                            Ver perfil
+                            <Icon Name="arrow-right" Size="15" />
+                        </span>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+}
+
+@code {
+    private IReadOnlyList<SchoolListItemResponse> _schools = [];
+    private IReadOnlyList<SportResponse> _sports = [];
+    private bool _loading = true;
+    private string? _error;
+    private string _query = string.Empty;
+    private Guid? _sportFilter;
+
+    private List<SchoolListItemResponse> FilteredSchools
+    {
+        get
+        {
+            var query = _query.Trim();
+
+            return _schools
+                .Where(school => _sportFilter is null || school.SportId == _sportFilter)
+                .Where(school => string.IsNullOrWhiteSpace(query)
+                    || school.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || school.City.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    || school.SportName.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Session.Changed += HandleSessionChanged;
+        await LoadAsync();
+    }
+
+    public void Dispose() => Session.Changed -= HandleSessionChanged;
+
+    private void HandleSessionChanged() => _ = ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task LoadAsync()
+    {
+        _error = null;
+
+        if (!Session.IsAuthenticated)
+        {
+            _schools = [];
+            _sports = [];
+            _loading = false;
+            return;
+        }
+
+        _loading = true;
+
+        try
+        {
+            _sports = await SportsService.GetAllAsync();
+            _schools = await SchoolsService.GetAllAsync();
+        }
+        catch (Exception)
+        {
+            _error = "El directorio ficticio de escuelas no ha respondido.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+
+    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+
+    private void SelectSport(Guid? sportId) => _sportFilter = sportId;
+
+    private void ClearFilters()
+    {
+        _query = string.Empty;
+        _sportFilter = null;
+    }
+}
