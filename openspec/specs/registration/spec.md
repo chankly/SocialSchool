@@ -29,6 +29,16 @@ compartan identificador. SHALL NOT crear el perfil (`Athlete` o `School`): eso l
 - **WHEN** el perfil no trae el atributo `userType` o trae un valor desconocido
 - **THEN** no se crea la cuenta, la respuesta no es satisfactoria y queda constancia en el log
 
+### Requirement: El tipo de cuenta llega en dos idiomas
+
+El tipo de cuenta del perfil SHALL aceptarse tanto en inglés (`Athlete` y `School`) como en español
+(`Deportista` y `Escuela`), porque el formulario de registro de Keycloak lo envía en el idioma en el que se
+rellenó. Un valor que no sea ninguno de esos cuatro SHALL tratarse como tipo de cuenta desconocido.
+
+#### Scenario: Registro rellenado en español
+- **WHEN** el perfil trae `userType` con `Deportista` o `Escuela`
+- **THEN** se crea la cuenta del mismo tipo que con `Athlete` o `School`, con el estado que corresponde a ese tipo
+
 ### Requirement: El evento se procesa una sola vez
 
 Un mismo registro SHALL NOT crear dos cuentas: si ya existe una cuenta con la misma identidad externa, la

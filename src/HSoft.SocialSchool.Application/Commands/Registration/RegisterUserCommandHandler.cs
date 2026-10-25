@@ -80,17 +80,26 @@ namespace HSoft.SocialSchool.Application.Commands.Registration
         }
 
         /// <summary>
-        /// Solo se aceptan los nombres de la enumeración: un valor numérico también lo interpretaría
-        /// <see cref="Enum.TryParse{TEnum}(string?, out TEnum)"/> y crearía una cuenta del tipo equivocado.
+        /// Keycloak entrega el tipo de cuenta en el idioma con el que se rellenó el registro, así que hay dos
+        /// vocabularios: el inglés (<c>Athlete</c>, <c>School</c>) y el español (<c>Deportista</c>,
+        /// <c>Escuela</c>). Se comparan sin distinguir mayúsculas y solo se aceptan esos cuatro valores: un
+        /// número también lo interpretaría <see cref="Enum.TryParse{TEnum}(string?, out TEnum)"/> y crearía una
+        /// cuenta del tipo equivocado.
         /// </summary>
+        private static readonly Dictionary<string, AccountType> AccountTypeNames = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [nameof(AccountType.Athlete)] = AccountType.Athlete,
+            ["Deportista"] = AccountType.Athlete,
+            [nameof(AccountType.School)] = AccountType.School,
+            ["Escuela"] = AccountType.School
+        };
+
         private static bool TryGetAccountType(string? userType, out AccountType accountType)
         {
-            var name = Enum.GetNames<AccountType>()
-                .FirstOrDefault(candidate => string.Equals(candidate, userType, StringComparison.OrdinalIgnoreCase));
+            accountType = default;
 
-            accountType = name is null ? default : Enum.Parse<AccountType>(name);
-
-            return name is not null;
+            return !string.IsNullOrWhiteSpace(userType)
+                && AccountTypeNames.TryGetValue(userType.Trim(), out accountType);
         }
     }
 }

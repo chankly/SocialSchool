@@ -53,6 +53,32 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
         }
 
         [Fact]
+        public async Task El_tipo_de_cuenta_en_espanol_tambien_se_acepta()
+        {
+            var repository = new FakeUserRepository(null);
+
+            var result = await Handler(repository, Profile("Deportista"))
+                .Handle(new RegisterUserCommand(KeycloakUserId), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(AccountType.Athlete, Assert.Single(repository.Added).AccountType);
+        }
+
+        [Fact]
+        public async Task La_escuela_en_espanol_queda_pendiente_de_validacion()
+        {
+            var repository = new FakeUserRepository(null);
+
+            var result = await Handler(repository, Profile("Escuela"))
+                .Handle(new RegisterUserCommand(KeycloakUserId), CancellationToken.None);
+
+            Assert.True(result.IsSuccess);
+            var user = Assert.Single(repository.Added);
+            Assert.Equal(AccountType.School, user.AccountType);
+            Assert.Equal(AccountStatus.PendingValidation, user.AccountStatus);
+        }
+
+        [Fact]
         public async Task Cuenta_existente_no_crea_otra()
         {
             var existing = User.Create(Guid.NewGuid(), "heviaincognito@gmail.com", AccountType.Athlete, "google", KeycloakUserId, "en");
