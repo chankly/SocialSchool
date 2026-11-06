@@ -165,7 +165,7 @@
         }
         catch (Exception)
         {
-            _sportsError = "El catálogo ficticio no ha respondido. Puedes intentarlo de nuevo.";
+            _sportsError = "El catálogo de deportes no ha respondido. Puedes intentarlo de nuevo.";
         }
         finally
         {
@@ -229,7 +229,7 @@
                     break;
 
                 case ProfileSaveResult.Unauthorized:
-                    _submitError = "La sesión ha caducado. Elige otra sesión de demo en la cabecera.";
+                    _submitError = "La sesión ha caducado. Vuelve a iniciar sesión e inténtalo de nuevo.";
                     break;
 
                 case ProfileSaveResult.Failure failure:
@@ -239,7 +239,7 @@
         }
         catch (Exception)
         {
-            _submitError = "No se ha podido crear el perfil simulado. Inténtalo de nuevo.";
+            _submitError = "No se ha podido crear el perfil. Inténtalo de nuevo.";
         }
         finally
         {

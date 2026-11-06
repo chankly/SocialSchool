@@ -3,13 +3,13 @@ using HSoft.SocialSchool.Web.Models.Accounts;
 namespace HSoft.SocialSchool.Web.Services.Session;
 
 /// <summary>
-/// Identidad del usuario en la maqueta. Sustituye a la autenticación real contra Keycloak:
-/// el tipo de cuenta se obtiene de un valor equivalente al claim <c>userType</c> del token
-/// y se normaliza con <see cref="AccountTypeParser"/>.
+/// Identidad del usuario autenticado. En modo demo la implementa una sesión ficticia;
+/// con OIDC se resuelve a partir de los claims del token de Keycloak. El tipo de cuenta
+/// llega como <c>userType</c> y se normaliza con <see cref="AccountTypeParser"/>.
 /// </summary>
 public interface ISessionService
 {
-    /// <summary>Se dispara cuando cambia la sesión simulada.</summary>
+    /// <summary>Se dispara cuando cambia la sesión.</summary>
     event Action? Changed;
 
     /// <summary>Indica si hay una sesión válida. Sin sesión, la API respondería 401.</summary>
@@ -33,12 +33,9 @@ public interface ISessionService
     /// <summary>Valor bruto del token, tal y como llegaría desde Keycloak.</summary>
     string? RawUserType { get; }
 
-    /// <summary>Escenario de demostración activo.</summary>
-    DemoSessionScenario Scenario { get; }
-
-    /// <summary>Cambia de escenario y notifica a los componentes suscritos.</summary>
-    void UseScenario(DemoSessionScenario scenario);
-
-    /// <summary>Vuelve al escenario inicial de la maqueta.</summary>
-    void Reset();
+    /// <summary>
+    /// Resuelve la identidad cuando el proveedor la carga de forma asíncrona (OIDC).
+    /// La sesión de demostración ya está disponible y no hace nada.
+    /// </summary>
+    Task EnsureLoadedAsync(CancellationToken cancellationToken = default);
 }

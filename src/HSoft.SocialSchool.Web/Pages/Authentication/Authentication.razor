@@ -1,0 +1,27 @@
+@page "/authentication/{action}"
+@inject WebAppSettings Settings
+@inject NavigationManager Navigation
+
+<PageTitle>SocialSchool · Acceso</PageTitle>
+
+@if (Settings.UseMocks)
+{
+    <Alert Tone="UiTone.Warning" Title="El acceso OIDC no está configurado" IconName="lock">
+        <p class="alert-text">
+            Rellena <code>ApiBaseUrl</code> y <code>Oidc</code> en <code>wwwroot/appsettings.json</code>
+            para activar Keycloak. En modo demo la sesión se elige desde la cabecera.
+        </p>
+    </Alert>
+}
+else
+{
+    <RemoteAuthenticatorView Action="@Action" OnLogInSucceeded="HandleLogInSucceeded" />
+}
+
+@code {
+    /// <summary>Acción solicitada por la librería: login, logout, profile…</summary>
+    [Parameter]
+    public string? Action { get; set; }
+
+    private void HandleLogInSucceeded(RemoteAuthenticationState state) => Navigation.NavigateTo("/profile");
+}

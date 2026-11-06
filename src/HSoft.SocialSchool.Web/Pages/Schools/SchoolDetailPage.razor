@@ -3,6 +3,7 @@
 @inject ISchoolsService SchoolsService
 @inject IFriendsService FriendsService
 @inject ISessionService Session
+@inject NavigationManager Navigation
 
 <a class="back-link" href="schools">
     <Icon Name="arrow-right" Size="16" CssClass="icon-back" />
@@ -291,9 +292,21 @@ else if (_school is { } detail)
         }
     }
 
-    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+    private void SignInAsAthlete() => SignIn(DemoSessionScenario.AthleteWithProfile);
 
-    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+    private void SignInAsSchool() => SignIn(DemoSessionScenario.SchoolWithProfile);
+
+    private void SignIn(DemoSessionScenario scenario)
+    {
+        if (Session is IDemoSessionService demoSession)
+        {
+            demoSession.UseScenario(scenario);
+        }
+        else
+        {
+            Navigation.NavigateToLogin("authentication/login");
+        }
+    }
 
     private async Task SendFriendRequestAsync()
     {

@@ -7,7 +7,7 @@ namespace HSoft.SocialSchool.Web.Services.Session;
 /// Sesión ficticia en memoria. Permite alternar entre deportista y escuela, entre cuenta
 /// con perfil y sin perfil, y entre sesión y ausencia de sesión.
 /// </summary>
-public sealed class MockSessionService : ISessionService
+public sealed class MockSessionService : IDemoSessionService
 {
     private DemoSessionScenario _scenario = DemoSessionScenario.AthleteWithProfile;
     private DemoUser _user = DemoUsers.For(DemoSessionScenario.AthleteWithProfile);
@@ -54,4 +54,7 @@ public sealed class MockSessionService : ISessionService
 
     /// <inheritdoc />
     public void Reset() => UseScenario(DemoSessionScenario.AthleteWithProfile);
+
+    /// <inheritdoc />
+    public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
