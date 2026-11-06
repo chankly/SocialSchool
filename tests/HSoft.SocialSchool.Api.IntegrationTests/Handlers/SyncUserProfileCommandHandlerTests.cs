@@ -146,6 +146,11 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
                 CancellationToken cancellationToken = default) =>
                 Task.FromResult(existing?.ExternalIdentityId == externalIdentityId ? existing : null);
 
+            public Task<bool> ExistsByNicknameAsync(
+                string nickname,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
             public override Task Add(User entity)
             {
                 Added.Add(entity);

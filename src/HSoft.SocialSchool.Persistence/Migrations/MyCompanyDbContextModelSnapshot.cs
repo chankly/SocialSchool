@@ -539,6 +539,44 @@ namespace HSoft.SocialSchool.Persistence.Migrations
                         .HasDatabaseName("IX_Sports_Name");
 
                     b.ToTable("Sports", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-0001-4000-8000-000000000001"),
+                            IsActive = true,
+                            Name = "Skate"
+                        },
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-0002-4000-8000-000000000002"),
+                            IsActive = true,
+                            Name = "Surf"
+                        },
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-0003-4000-8000-000000000003"),
+                            IsActive = true,
+                            Name = "Snowboard"
+                        },
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-0004-4000-8000-000000000004"),
+                            IsActive = true,
+                            Name = "BMX"
+                        },
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-0005-4000-8000-000000000005"),
+                            IsActive = true,
+                            Name = "Parkour"
+                        },
+                        new
+                        {
+                            Id = new Guid("a1b2c3d4-0006-4000-8000-000000000006"),
+                            IsActive = true,
+                            Name = "Escalada"
+                        });
                 });
 
             modelBuilder.Entity("HSoft.SocialSchool.Domain.Entities.Users.NotificationPreference", b =>
