@@ -13,6 +13,9 @@ namespace HSoft.SocialSchool.Api.Core
 {
     public static class ServicesCollectionExtensions
     {
+        /// <summary>Nombre de la política CORS abierta, que el pipeline aplica antes de autenticar.</summary>
+        public const string AllowAnyOriginCorsPolicy = "AllowAnyOrigin";
+
         public static IServiceCollection AddConfiguredControllers(this IServiceCollection services, ConfigurationManager configuration)
         {
             services.AddControllers(opt =>
@@ -27,6 +30,19 @@ namespace HSoft.SocialSchool.Api.Core
                 });
             services.AddEndpointsApiExplorer();
             services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
+            return services;
+        }
+
+        /// <summary>
+        /// Permite que cualquier origen consuma la API. No se combina con credenciales de navegador porque
+        /// el token viaja en la cabecera <c>Authorization</c>, no en una cookie.
+        /// </summary>
+        public static IServiceCollection AddCorsPolicy(this IServiceCollection services)
+        {
+            services.AddCors(options =>
+                options.AddPolicy(AllowAnyOriginCorsPolicy, policy =>
+                    policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+
             return services;
         }
 

@@ -7,6 +7,7 @@
     <RootNamespace>HSoft.SocialSchool.Web</RootNamespace>
     <AssemblyName>HSoft.SocialSchool.Web</AssemblyName>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <UserSecretsId>496c35fd-2785-4988-9017-31d4cf83e2f2</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

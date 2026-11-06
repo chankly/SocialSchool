@@ -24,6 +24,7 @@ namespace HSoft.SocialSchool.Api.Core
             builder.WebHost.UseKestrel();
             builder.Services.AddConfiguredOptions(builder.Configuration);
             builder.Services.AddConfiguredControllers(builder.Configuration);
+            builder.Services.AddCorsPolicy();
             builder.Services.AddAuthentication(builder.Configuration);
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails();

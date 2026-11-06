@@ -1,4 +1,6 @@
-﻿namespace HSoft.SocialSchool.Api.Extensions
+﻿using HSoft.SocialSchool.Api.Core;
+
+namespace HSoft.SocialSchool.Api.Extensions
 {
     public static class WebApplicationExtensions
     {
@@ -27,6 +29,11 @@
             }            
 
             app.UseRouting();
+
+            // El navegador pregunta con un OPTIONS antes de la petición real: si el CORS no responde antes
+            // de la autenticación, el preflight se lleva un 401 y la llamada desde la web nunca sale.
+            app.UseCors(ServicesCollectionExtensions.AllowAnyOriginCorsPolicy);
+
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
