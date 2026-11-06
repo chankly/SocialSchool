@@ -45,7 +45,7 @@
 <div class="two-col">
     <section class="card">
         <div class="card-head">
-            <h3>@(Session is IDemoSessionService ? "Tu sesión de demo" : "Tu sesión de Keycloak")</h3>
+            <h3>Tu sesión de Keycloak</h3>
             @if (Session.AccountType is { } accountType)
             {
                 <Pill Text="@accountType.ToDisplayName()" Tone="UiTone.Brand" />
@@ -79,9 +79,7 @@
                 </div>
             </dl>
             <p class="muted small">
-                @(Session is IDemoSessionService
-                    ? "Cambia la sesión en la cabecera para recorrer los tres estados del perfil."
-                    : "La sesión la emite Keycloak; el token lo adjunta la librería OIDC en cada llamada.")
+                La sesión la emite Keycloak; el token lo adjunta la librería OIDC en cada llamada.
             </p>
         </div>
     </section>
@@ -137,23 +135,14 @@
 <div class="two-col">
     <section class="card">
         <div class="card-head">
-            <h3>Actividad de la comunidad</h3>
-            <Pill Text="Simulada" Tone="UiTone.Info" Icon="sparkles" />
+            <h3>Tu comunidad</h3>
         </div>
         <div class="card-body">
-            <ul class="activity-list">
-                @foreach (var item in RecentActivity)
-                {
-                    <li class="activity-row" @key="item.Title">
-                        <span class="activity-icon"><Icon Name="@item.Icon" Size="16" /></span>
-                        <div class="activity-text">
-                            <strong>@item.Title</strong>
-                            <span>@item.Detail</span>
-                        </div>
-                        <time>@item.When</time>
-                    </li>
-                }
-            </ul>
+            <p class="muted">
+                Amigos, solicitudes y escuelas salen del API: consulta
+                <a href="friends">amistades</a> para ver con quién compartes la cuenta y
+                <a href="schools">el directorio</a> para descubrir escuelas.
+            </p>
         </div>
     </section>
 
@@ -166,10 +155,6 @@
                 <div class="info-row">
                     <dt>API</dt>
                     <dd class="mono">@(string.IsNullOrWhiteSpace(Settings.ApiBaseUrl) ? "(sin configurar)" : Settings.ApiBaseUrl)</dd>
-                </div>
-                <div class="info-row">
-                    <dt>Datos simulados</dt>
-                    <dd>@(Settings.UseMocks ? "activados" : "desactivados")</dd>
                 </div>
                 <div class="info-row">
                     <dt>Keycloak</dt>

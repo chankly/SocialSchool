@@ -4,12 +4,7 @@ namespace HSoft.SocialSchool.Web.Services.Schools.Responses;
 public sealed record SchoolListItemResponse(
     Guid Id,
     string Name,
-    string Nickname,
+    string? LogoUrl,
     Guid SportId,
     string SportName,
-    string City,
-    string Country,
-    string Description,
-    string? LogoUrl,
-    int AttendeesCount,
-    bool IsValidated);
+    string City);

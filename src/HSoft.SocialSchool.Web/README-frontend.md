@@ -1,9 +1,14 @@
 # HSoft.SocialSchool.Web · boceto del cliente web
 
-> **Estado:** cliente navegable con dos modos. Por defecto usa datos simulados en memoria; con
-> `ApiBaseUrl` y `Oidc` configurados habla con el API real y autentica contra Keycloak.
+> **Estado:** cliente conectado al API. No hay modo demo ni datos de ejemplo: si faltan
+> `ApiBaseUrl` u `Oidc` la aplicación muestra un aviso de configuración incompleta.
 > **Alcance:** cliente Blazor WebAssembly independiente del backend. No modifica ni referencia
 > `Api`, `Application`, `Domain` ni `Persistence`.
+>
+> **Endpoints que consume:** `GET`/`POST /api/user/profile/me`, `GET /api/sports`,
+> `GET /api/schools`, `GET /api/schools/{id}`, `GET /api/friends`,
+> `POST /api/friends/requests`, `POST /api/friends/requests/{id}/accept|reject`,
+> `DELETE /api/friends/requests/{id}` y `DELETE /api/friends/{userId}`.
 
 ## Qué es
 

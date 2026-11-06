@@ -4,6 +4,6 @@ namespace HSoft.SocialSchool.Web.Services.Schools.Responses;
 public sealed record SchoolServiceResponse(
     Guid Id,
     string Name,
-    string Description,
-    decimal Price,
-    string Schedule);
+    string? Description,
+    decimal? Price,
+    string? Currency);

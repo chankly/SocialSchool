@@ -1,7 +1,6 @@
 using FluentValidation;
 using HSoft.SocialSchool.Web.Authentication;
 using HSoft.SocialSchool.Web.Configuration;
-using HSoft.SocialSchool.Web.Services.Demo;
 using HSoft.SocialSchool.Web.Services.Friends;
 using HSoft.SocialSchool.Web.Services.Profile;
 using HSoft.SocialSchool.Web.Services.Profile.Requests;
@@ -17,15 +16,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace HSoft.SocialSchool.Web.Extensions;
 
 /// <summary>
-/// Registro de dependencias del cliente. El modo demo y el modo API real se deciden aquí,
-/// en un único punto, según estén completos <c>ApiBaseUrl</c> y <c>Oidc</c>.
+/// Registro de dependencias del cliente. Solo hay un camino: servicios HTTP contra el API y
+/// sesión OIDC. Sin <c>ApiBaseUrl</c> y <c>Oidc</c> completos no se registra ninguno y la
+/// aplicación muestra un aviso de configuración incompleta en lugar de datos de ejemplo.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Registra la configuración, la autenticación y los servicios que consume la UI.
-    /// Sin <c>ApiBaseUrl</c> u <c>Oidc</c> completos se mantienen los mocks y la sesión de demo.
-    /// </summary>
+    /// <summary>Registra la configuración y, si está completa, los servicios que consume la UI.</summary>
     public static IServiceCollection AddWebAppServices(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -42,36 +39,20 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton(settings);
 
-        if (settings.UseMocks)
-        {
-            AddDemoServices(services);
-        }
-        else
-        {
-            AddApiServices(services, settings);
-        }
-
-        services.AddScoped<ProfileState>();
-
         services.AddSingleton<IValidator<CreateAthleteProfileRequest>, CreateAthleteProfileRequestValidator>();
         services.AddSingleton<IValidator<CreateSchoolProfileRequest>, CreateSchoolProfileRequestValidator>();
 
+        // Sin configuración completa no hay nada que consultar: App.razor pinta el aviso.
+        if (!settings.IsConfigured)
+        {
+            return services;
+        }
+
+        AddApiServices(services, settings);
+
+        services.AddScoped<ProfileState>();
+
         return services;
-    }
-
-    /// <summary>Servicios simulados y sesión de demostración, sin Keycloak ni API.</summary>
-    private static void AddDemoServices(IServiceCollection services)
-    {
-        services.AddSingleton<MockDataStore>();
-
-        services.AddSingleton<MockSessionService>();
-        services.AddSingleton<IDemoSessionService>(provider => provider.GetRequiredService<MockSessionService>());
-        services.AddSingleton<ISessionService>(provider => provider.GetRequiredService<MockSessionService>());
-
-        services.AddSingleton<ISportsService, MockSportsService>();
-        services.AddSingleton<IProfileService, MockProfileService>();
-        services.AddSingleton<IFriendsService, MockFriendsService>();
-        services.AddSingleton<ISchoolsService, MockSchoolsService>();
     }
 
     /// <summary>Servicios HTTP contra el API y autenticación OIDC con un cliente público (PKCE).</summary>
@@ -102,11 +83,17 @@ public static class ServiceCollectionExtensions
             })
             .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
 
-        // Amistades y escuelas todavía no tienen backend: siguen con los mocks. Son Scoped
-        // porque consumen la sesión OIDC, que también es Scoped.
-        services.AddSingleton<MockDataStore>();
-        services.AddScoped<IFriendsService, MockFriendsService>();
-        services.AddScoped<ISchoolsService, MockSchoolsService>();
+        services.AddHttpClient<IFriendsService, HttpFriendsService>(client =>
+            {
+                client.BaseAddress = ToBaseAddress(settings.ApiBaseUrl);
+            })
+            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
+
+        services.AddHttpClient<ISchoolsService, HttpSchoolsService>(client =>
+            {
+                client.BaseAddress = ToBaseAddress(settings.ApiBaseUrl);
+            })
+            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
     }
 
     private static Uri ToBaseAddress(string apiBaseUrl) =>

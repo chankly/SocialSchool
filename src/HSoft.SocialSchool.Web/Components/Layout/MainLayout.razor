@@ -11,32 +11,13 @@
             <span class="brand-mark">SS</span>
             <span class="brand-text">
                 <strong>SocialSchool</strong>
-                <small>@(IsDemo ? "boceto web · datos simulados" : "cliente web · conectado al API")</small>
+                <small>cliente web · conectado al API</small>
             </span>
         </a>
 
         <NavMenu />
 
         <div class="sidebar-footer">
-            @if (IsDemo)
-            {
-                <div class="demo-card">
-                    <p class="demo-card-title">
-                        <Icon Name="sparkles" Size="16" />
-                        Modo demo
-                    </p>
-                    <p class="demo-card-text">
-                        Todo se sirve desde mocks en memoria. Al recargar, los datos vuelven a su estado inicial.
-                    </p>
-                    <button type="button" class="btn btn-sidebar" @onclick="ReloadDemo">
-                        <Icon Name="refresh" Size="16" />
-                        Reiniciar datos
-                    </button>
-                </div>
-                <p class="sidebar-note">Sin autenticación real: la sesión se simula desde la cabecera.</p>
-            }
-            else
-            {
                 <div class="demo-card">
                     <p class="demo-card-title">
                         <Icon Name="shield" Size="16" />
@@ -63,28 +44,12 @@
                     }
                 </div>
                 <p class="sidebar-note">El token lo gestiona la librería OIDC; nunca se guarda a mano.</p>
-            }
         </div>
     </aside>
 
     <div class="app-main">
         <header class="topbar">
             <div class="session-picker">
-                @if (DemoSession is { } demoSession)
-                {
-                    <label class="topbar-label" for="demo-session">Sesión de demo</label>
-                    <select id="demo-session" class="session-select" @key="demoSession.Scenario" @onchange="OnScenarioChanged">
-                        @foreach (var option in DemoSessionCatalog.All)
-                        {
-                            <option value="@option.Scenario" selected="@(option.Scenario == demoSession.Scenario)">
-                                @option.Label
-                            </option>
-                        }
-                    </select>
-                    <p class="session-detail">@DemoSessionCatalog.For(demoSession.Scenario).Detail</p>
-                }
-                else
-                {
                     <span class="topbar-label">Autenticación OIDC</span>
                     <p class="session-detail">
                         @(Session.IsAuthenticated
@@ -126,7 +91,7 @@
                             <p class="alert-text">
                                 La maqueta ha capturado un error inesperado para que el resto de la navegación siga funcionando.
                             </p>
-                            <button type="button" class="btn btn-outline btn-sm" @onclick="ReloadDemo">Recargar la aplicación</button>
+                            <button type="button" class="btn btn-outline btn-sm" @onclick="Reload">Recargar la aplicación</button>
                         </Alert>
                     </div>
                 </ErrorContent>
@@ -134,17 +99,13 @@
         </main>
 
         <footer class="app-footer">
-            <span>SocialSchool · boceto de cliente web Blazor WebAssembly</span>
-            <span>Los datos son ficticios y no viajan al backend.</span>
+            <span>SocialSchool · cliente web Blazor WebAssembly</span>
+            <span>Los datos vienen del API configurado.</span>
         </footer>
     </div>
 </div>
 
 @code {
-    private IDemoSessionService? DemoSession => Session as IDemoSessionService;
-
-    private bool IsDemo => DemoSession is not null;
-
     protected override async Task OnInitializedAsync()
     {
         Session.Changed += HandleSessionChanged;
@@ -155,18 +116,9 @@
 
     private void HandleSessionChanged() => _ = InvokeAsync(StateHasChanged);
 
-    private void OnScenarioChanged(ChangeEventArgs args)
-    {
-        if (DemoSession is { } demoSession
-            && Enum.TryParse<DemoSessionScenario>(args.Value?.ToString(), out var scenario))
-        {
-            demoSession.UseScenario(scenario);
-        }
-    }
-
     private void SignIn() => Navigation.NavigateToLogin("authentication/login");
 
     private void SignOut() => Navigation.NavigateToLogout("authentication/logout");
 
-    private void ReloadDemo() => Navigation.Refresh(true);
+    private void Reload() => Navigation.Refresh(true);
 }

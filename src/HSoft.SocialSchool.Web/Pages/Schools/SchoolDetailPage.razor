@@ -10,7 +10,7 @@
     Volver a escuelas
 </a>
 
-<PageHeader Eyebrow="Perfil público" Title="@(_school?.School.Name ?? "Escuela")"
+<PageHeader Eyebrow="Perfil público" Title="@(_school?.Name ?? "Escuela")"
             Subtitle="Perfil público de la escuela, con sus servicios y la lista de asistentes.">
     <Actions>
         <Pill Text="Escuela" Tone="UiTone.Brand" Icon="school" />
@@ -25,12 +25,9 @@
             <h2>Necesitas una sesión para ver esta escuela</h2>
             <p>Los perfiles públicos de escuela están disponibles para usuarios autenticados.</p>
             <div class="button-row">
-                <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
+                <button type="button" class="btn btn-primary" @onclick="SignIn">
                     <Icon Name="user" Size="18" />
-                    Entrar como deportista
-                </button>
-                <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
-                    Entrar como escuela
+                    Iniciar sesión
                 </button>
             </div>
         </div>
@@ -49,8 +46,8 @@ else if (_error is not null)
 }
 else if (_school is null)
 {
-    <EmptyState Icon="compass" Title="Esta escuela no existe en la maqueta"
-                Message="El identificador no corresponde a ninguna de las escuelas ficticias.">
+    <EmptyState Icon="compass" Title="Esta escuela no existe"
+                Message="El identificador no corresponde a ninguna escuela visible para tu cuenta.">
         <a class="btn btn-primary btn-sm" href="schools">Volver al directorio</a>
     </EmptyState>
 }
@@ -59,19 +56,18 @@ else if (_school is { } detail)
     <section class="profile-hero card">
         <div class="profile-hero-bg" aria-hidden="true"></div>
         <div class="profile-hero-body">
-            <Avatar ImageUrl="@detail.School.LogoUrl" Name="@detail.School.Name" Size="xl" CssClass="profile-avatar" />
+            <Avatar ImageUrl="@detail.LogoUrl" Name="@detail.Name" Size="xl" CssClass="profile-avatar" />
             <div class="profile-identity">
                 <div class="profile-name-row">
-                    <h2>@detail.School.Name</h2>
-                    <Pill Text="@(detail.School.IsValidated ? "Validada" : "Pendiente")"
-                          Tone="@(detail.School.IsValidated ? UiTone.Success : UiTone.Warning)"
+                    <h2>@detail.Name</h2>
+                    <Pill Text="@(detail.AccountStatus?.ToDisplayName() ?? "Estado desconocido")"
+                          Tone="@(detail.AccountStatus == AccountStatus.Active ? UiTone.Success : UiTone.Warning)"
                           Icon="shield" />
                 </div>
-                <p class="profile-nick"><span class="nick-at">@("@")</span>@detail.School.Nickname</p>
                 <p class="profile-meta">
-                    <span class="meta-item"><Icon Name="map-pin" Size="16" />@detail.School.City, @CountryCatalog.GetName(detail.School.Country)</span>
-                    <span class="meta-item"><Icon Name="trophy" Size="16" />@detail.School.SportName</span>
-                    <span class="meta-item"><Icon Name="users" Size="16" />@detail.School.AttendeesCount asistentes</span>
+                    <span class="meta-item"><Icon Name="map-pin" Size="16" />@detail.City, @CountryCatalog.GetName(detail.Country)</span>
+                    <span class="meta-item"><Icon Name="trophy" Size="16" />@detail.SportName</span>
+                    <span class="meta-item"><Icon Name="users" Size="16" />@detail.Attendees.Count asistentes</span>
                 </p>
             </div>
         </div>
@@ -91,7 +87,7 @@ else if (_school is { } detail)
                 <h3>Sobre la escuela</h3>
             </div>
             <div class="card-body">
-                <p class="prose">@detail.School.Description</p>
+                <p class="prose">@detail.Description</p>
             </div>
         </article>
 
@@ -193,9 +189,8 @@ else if (_school is { } detail)
                                 <div class="service-text">
                                     <strong>@service.Name</strong>
                                     <p>@service.Description</p>
-                                    <span class="muted small"><Icon Name="calendar" Size="14" /> @service.Schedule</span>
                                 </div>
-                                <span class="service-price">@FormatPrice(service.Price)</span>
+                                <span class="service-price">@(service.Price is { } price ? FormatPrice(price) + " " + service.Currency : "Sin precio")</span>
                             </li>
                         }
                     </ul>
@@ -219,10 +214,10 @@ else if (_school is { } detail)
                         @foreach (var attendee in detail.Attendees)
                         {
                             <li class="attendee-card" @key="attendee.Id">
-                                <Avatar Name="@attendee.DisplayName" Size="md" />
+                                <Avatar Name="@attendee.Nickname" ImageUrl="@attendee.ProfilePictureUrl" Size="md" />
                                 <div class="attendee-text">
-                                    <strong>@attendee.DisplayName</strong>
-                                    <span>@attendee.Subtitle</span>
+                                    <strong>@("@")@attendee.Nickname</strong>
+                                    <span>Deportista</span>
                                 </div>
                             </li>
                         }
@@ -292,21 +287,7 @@ else if (_school is { } detail)
         }
     }
 
-    private void SignInAsAthlete() => SignIn(DemoSessionScenario.AthleteWithProfile);
-
-    private void SignInAsSchool() => SignIn(DemoSessionScenario.SchoolWithProfile);
-
-    private void SignIn(DemoSessionScenario scenario)
-    {
-        if (Session is IDemoSessionService demoSession)
-        {
-            demoSession.UseScenario(scenario);
-        }
-        else
-        {
-            Navigation.NavigateToLogin("authentication/login");
-        }
-    }
+    private void SignIn() => Navigation.NavigateToLogin("authentication/login");
 
     private async Task SendFriendRequestAsync()
     {
@@ -320,7 +301,7 @@ else if (_school is { } detail)
 
         try
         {
-            var result = await FriendsService.SendRequestAsync(detail.School.Id);
+            var result = await FriendsService.SendRequestAsync(detail.Id);
             _actionFailed = !result.IsSuccess;
             _actionMessage = result.IsSuccess
                 ? "La solicitud aparecerá en Amistades → Enviadas."
@@ -329,7 +310,7 @@ else if (_school is { } detail)
         catch (Exception)
         {
             _actionFailed = true;
-            _actionMessage = "No se ha podido enviar la solicitud simulada.";
+            _actionMessage = "No se ha podido enviar la solicitud. Comprueba la conexión e inténtalo de nuevo.";
         }
         finally
         {

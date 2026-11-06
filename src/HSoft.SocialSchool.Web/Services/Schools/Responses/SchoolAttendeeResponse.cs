@@ -1,7 +1,7 @@
 namespace HSoft.SocialSchool.Web.Services.Schools.Responses;
 
-/// <summary>Deportista que asiste a una escuela.</summary>
+/// <summary>Deportista que asiste a una escuela. Solo se publica el nick y la foto.</summary>
 public sealed record SchoolAttendeeResponse(
     Guid Id,
-    string DisplayName,
-    string Subtitle);
+    string Nickname,
+    string? ProfilePictureUrl);

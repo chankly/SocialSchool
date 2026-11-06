@@ -6,10 +6,10 @@ namespace HSoft.SocialSchool.Web.Configuration;
 /// </summary>
 public sealed class WebAppSettings
 {
-    /// <summary>URL base de la API de SocialSchool. Vacía mientras se usa el modo demo.</summary>
+    /// <summary>URL base de la API de SocialSchool.</summary>
     public string ApiBaseUrl { get; init; } = string.Empty;
 
-    /// <summary>Authority pública del realm de Keycloak. Vacía mientras se usa el modo demo.</summary>
+    /// <summary>Authority pública del realm de Keycloak.</summary>
     public string OidcAuthority { get; init; } = string.Empty;
 
     /// <summary>
@@ -20,14 +20,44 @@ public sealed class WebAppSettings
 
     /// <summary>
     /// Indica si hay configuración suficiente para hablar con la API y con Keycloak.
-    /// Basta con dejar vacío cualquiera de los tres valores para volver al modo demo.
+    /// Sin ella no se registra ningún servicio de datos: la aplicación solo muestra el aviso.
     /// </summary>
-    public bool IsApiConfigured =>
+    public bool IsConfigured =>
         !string.IsNullOrWhiteSpace(ApiBaseUrl)
         && Uri.TryCreate(ApiBaseUrl, UriKind.Absolute, out _)
         && !string.IsNullOrWhiteSpace(OidcAuthority)
         && !string.IsNullOrWhiteSpace(OidcClientId);
 
-    /// <summary>Indica si la aplicación usa los servicios simulados y la sesión de demo.</summary>
-    public bool UseMocks => !IsApiConfigured;
+    /// <summary>
+    /// Claves que faltan o no son válidas, separadas por comas. Se muestra al usuario
+    /// en lugar de cualquier dato de ejemplo.
+    /// </summary>
+    public string MissingConfiguration
+    {
+        get
+        {
+            var missing = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(ApiBaseUrl))
+            {
+                missing.Add("ApiBaseUrl");
+            }
+            else if (!Uri.TryCreate(ApiBaseUrl, UriKind.Absolute, out _))
+            {
+                missing.Add("ApiBaseUrl (no es una URL absoluta)");
+            }
+
+            if (string.IsNullOrWhiteSpace(OidcAuthority))
+            {
+                missing.Add("Oidc:Authority");
+            }
+
+            if (string.IsNullOrWhiteSpace(OidcClientId))
+            {
+                missing.Add("Oidc:ClientId");
+            }
+
+            return string.Join(", ", missing);
+        }
+    }
 }

@@ -20,12 +20,9 @@
             <h2>Necesitas una sesión para ver el directorio</h2>
             <p>Las consultas de escuelas requieren un usuario autenticado. Simula el regreso del login para continuar.</p>
             <div class="button-row">
-                <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
+                <button type="button" class="btn btn-primary" @onclick="SignIn">
                     <Icon Name="user" Size="18" />
-                    Entrar como deportista
-                </button>
-                <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
-                    Entrar como escuela
+                    Iniciar sesión
                 </button>
             </div>
         </div>
@@ -91,25 +88,21 @@ else
                         <Avatar ImageUrl="@school.LogoUrl" Name="@school.Name" Size="lg" />
                         <div class="school-card-title">
                             <strong>@school.Name</strong>
-                            <span>@("@")@school.Nickname</span>
                         </div>
-                        <Pill Text="@(school.IsValidated ? "Validada" : "Pendiente")"
-                              Tone="@(school.IsValidated ? UiTone.Success : UiTone.Warning)"
-                              Icon="shield" />
                     </div>
 
-                    <p class="school-card-description">@school.Description</p>
-
-                    <div class="school-card-meta">
-                        <span class="meta-item"><Icon Name="trophy" Size="15" />@school.SportName</span>
-                        <span class="meta-item">
-                            <Icon Name="map-pin" Size="15" />
-                            @school.City, @CountryCatalog.GetName(school.Country)
-                        </span>
-                    </div>
+                    @if (!string.IsNullOrWhiteSpace(school.City))
+                    {
+                        <div class="school-card-meta">
+                            <span class="meta-item"><Icon Name="trophy" Size="15" />@school.SportName</span>
+                            <span class="meta-item">
+                                <Icon Name="map-pin" Size="15" />
+                                @school.City
+                            </span>
+                        </div>
+                    }
 
                     <div class="school-card-footer">
-                        <span class="meta-item"><Icon Name="users" Size="15" />@school.AttendeesCount asistentes</span>
                         <span class="card-link">
                             Ver perfil
                             <Icon Name="arrow-right" Size="15" />
@@ -190,21 +183,7 @@ else
         }
     }
 
-    private void SignInAsAthlete() => SignIn(DemoSessionScenario.AthleteWithProfile);
-
-    private void SignInAsSchool() => SignIn(DemoSessionScenario.SchoolWithProfile);
-
-    private void SignIn(DemoSessionScenario scenario)
-    {
-        if (Session is IDemoSessionService demoSession)
-        {
-            demoSession.UseScenario(scenario);
-        }
-        else
-        {
-            Navigation.NavigateToLogin("authentication/login");
-        }
-    }
+    private void SignIn() => Navigation.NavigateToLogin("authentication/login");
 
     private void SelectSport(Guid? sportId) => _sportFilter = sportId;
 

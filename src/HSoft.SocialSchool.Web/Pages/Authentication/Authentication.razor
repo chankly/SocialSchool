@@ -4,12 +4,12 @@
 
 <PageTitle>SocialSchool · Acceso</PageTitle>
 
-@if (Settings.UseMocks)
+@if (!Settings.IsConfigured)
 {
     <Alert Tone="UiTone.Warning" Title="El acceso OIDC no está configurado" IconName="lock">
         <p class="alert-text">
             Rellena <code>ApiBaseUrl</code> y <code>Oidc</code> en <code>wwwroot/appsettings.json</code>
-            para activar Keycloak. En modo demo la sesión se elige desde la cabecera.
+            para activar Keycloak.
         </p>
     </Alert>
 }

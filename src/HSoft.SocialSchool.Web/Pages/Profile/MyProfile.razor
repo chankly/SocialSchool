@@ -16,18 +16,6 @@
     </Actions>
 </PageHeader>
 
-@if (Session is IDemoSessionService)
-{
-    <Alert Tone="UiTone.Info" Title="Recorre los tres estados desde la cabecera" IconName="sparkles">
-        <p class="alert-text">
-            Cambia la <strong>sesión de demo</strong> para ver un perfil existente (200), una cuenta sin
-            perfil (204) o una petición sin token (401). El tipo de cuenta del token se normaliza antes de
-            decidir qué formulario mostrar.
-        </p>
-    </Alert>
-}
-else
-{
     <Alert Tone="UiTone.Info" Title="Perfil servido por el API" IconName="sparkles">
         <p class="alert-text">
             La sesión la emite <strong>Keycloak</strong> y el token viaja en la cabecera de cada llamada.
@@ -35,7 +23,6 @@ else
             que ha devuelto <code>GET /api/user/profile/me</code>.
         </p>
     </Alert>
-}
 
 @if (ProfileState.Status is ProfileLoadStatus.Unknown or ProfileLoadStatus.Loading)
 {
@@ -50,38 +37,16 @@ else if (ProfileState.Status == ProfileLoadStatus.Unauthorized)
             <h2>No hay ninguna sesión activa</h2>
             <p>
                 La petición al perfil no lleva un token válido, así que la API no la atiende.
-                @if (Session is IDemoSessionService)
-                {
-                    <text>En la maqueta puedes simular el regreso del login con una cuenta ficticia.</text>
-                }
-                else
-                {
-                    <text>Inicia sesión de nuevo para continuar.</text>
-                }
+                Inicia sesión de nuevo para continuar.
             </p>
             <div class="button-row">
-                @if (Session is IDemoSessionService)
-                {
-                    <button type="button" class="btn btn-primary" @onclick="SignInAsAthlete">
-                        <Icon Name="user" Size="18" />
-                        Entrar como deportista
-                    </button>
-                    <button type="button" class="btn btn-outline" @onclick="SignInAsSchool">
-                        Entrar como escuela
-                    </button>
-                }
-                else
-                {
-                    <button type="button" class="btn btn-primary" @onclick="SignInWithOidc">
-                        <Icon Name="lock" Size="18" />
-                        Iniciar sesión
-                    </button>
-                }
+                <button type="button" class="btn btn-primary" @onclick="SignInWithOidc">
+                    <Icon Name="lock" Size="18" />
+                    Iniciar sesión
+                </button>
             </div>
             <p class="muted small">
-                @(Session is IDemoSessionService
-                    ? "No se usa Keycloak real: no hay tokens ni secretos en el cliente."
-                    : "El token lo gestiona la librería OIDC; nunca se guarda a mano en el navegador.")
+                El token lo gestiona la librería OIDC; nunca se guarda a mano en el navegador.
             </p>
         </div>
     </section>
@@ -244,17 +209,17 @@ else
         ProfileState.ApplyProfile(profile);
     }
 
-    private void SignInAsAthlete() => SignIn(DemoSessionScenario.AthleteWithProfile);
+    private void SignInAsAthlete() => SignInWithOidc();
 
-    private void SignInAsSchool() => SignIn(DemoSessionScenario.SchoolWithProfile);
+    private void SignInAsSchool() => SignInWithOidc();
 
     /// <summary>Sesión real: la librería OIDC se encarga del login. Sin escenario de demostración.</summary>
     private void SignInWithOidc() => Navigation.NavigateToLogin("authentication/login");
 
-    private void SignIn(DemoSessionScenario scenario)
+    private void SignIn()
     {
-        if (Session is IDemoSessionService demoSession)
-            demoSession.UseScenario(scenario);
+        if (Session.IsAuthenticated)
+            Navigation.NavigateToLogin("authentication/login");
     }
 
     private async Task RetryAsync() => await ProfileState.LoadAsync(force: true);
