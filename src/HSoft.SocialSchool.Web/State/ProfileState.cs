@@ -141,7 +141,7 @@ public sealed class ProfileState : IDisposable
 
                 default:
                     Status = ProfileLoadStatus.Failed;
-                    ErrorMessage = "La API simulada ha devuelto una respuesta no reconocida.";
+                    ErrorMessage = "La API ha devuelto una respuesta no reconocida.";
                     break;
             }
         }
@@ -153,7 +153,7 @@ public sealed class ProfileState : IDisposable
             }
 
             Status = ProfileLoadStatus.Failed;
-            ErrorMessage = "No se ha podido consultar el perfil simulado.";
+            ErrorMessage = "No se ha podido consultar el perfil.";
         }
         finally
         {
