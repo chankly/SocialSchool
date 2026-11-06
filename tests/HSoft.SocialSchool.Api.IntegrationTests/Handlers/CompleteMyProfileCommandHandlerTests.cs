@@ -1,5 +1,6 @@
 using HSoft.SocialSchool.Application.Commands.Profiles;
 using HSoft.SocialSchool.Application.Models.Profiles;
+using HSoft.SocialSchool.Application.Models.Schools;
 using HSoft.SocialSchool.Application.Repositories;
 using HSoft.SocialSchool.Application.Services;
 using HSoft.SocialSchool.Domain.Entities.Athletes;
@@ -300,6 +301,18 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
         private sealed class FakeUserRepository(User? user, bool nicknameExists = false)
             : FakeRepository<User>, IUserRepository
         {
+            public Task<IReadOnlyList<User>> GetByIdsReadOnlyAsync(
+                IReadOnlyList<Guid> userIds,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
+            public Task<IReadOnlyList<User>> GetDiscoverableReadOnlyAsync(
+                Guid userId,
+                IReadOnlyList<Guid> excludedUserIds,
+                int limit,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
             public List<User> Updated { get; } = [];
 
             public Task<User?> GetByExternalIdReadOnlyAsync(
@@ -321,6 +334,11 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
 
         private sealed class FakeAthleteRepository : FakeRepository<Athlete>, IAthleteRepository
         {
+            public Task<IReadOnlyList<Athlete>> GetByIdsReadOnlyAsync(
+                IReadOnlyList<Guid> athleteIds,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
             public List<Athlete> Added { get; } = [];
 
             public Task<Athlete?> GetByIdWithSportsReadOnlyAsync(
@@ -337,6 +355,23 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
 
         private sealed class FakeSchoolRepository : FakeRepository<School>, ISchoolRepository
         {
+            public Task<IReadOnlyList<SchoolDirectoryItem>> GetDirectoryReadOnlyAsync(
+                Guid? sportId,
+                string? city,
+                string? search,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
+            public Task<School?> GetByIdWithServicesReadOnlyAsync(
+                Guid id,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
+            public Task<IReadOnlyList<School>> GetByIdsReadOnlyAsync(
+                IReadOnlyList<Guid> schoolIds,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
             public List<School> Added { get; } = [];
 
             public override Task Add(School entity)
