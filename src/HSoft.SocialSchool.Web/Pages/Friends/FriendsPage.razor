@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject IFriendsService FriendsService
 @inject ISessionService Session
+@inject NavigationManager Navigation
 
 <PageHeader Eyebrow="Comunidad" Title="Amistades"
             Subtitle="Amigos, solicitudes y cuentas por descubrir. Las acciones modifican el estado simulado en memoria.">
@@ -299,9 +300,21 @@ else if (_overview is not null)
 
     private void SelectTab(FriendsTab tab) => _tab = tab;
 
-    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+    private void SignInAsAthlete() => SignIn(DemoSessionScenario.AthleteWithProfile);
 
-    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+    private void SignInAsSchool() => SignIn(DemoSessionScenario.SchoolWithProfile);
+
+    private void SignIn(DemoSessionScenario scenario)
+    {
+        if (Session is IDemoSessionService demoSession)
+        {
+            demoSession.UseScenario(scenario);
+        }
+        else
+        {
+            Navigation.NavigateToLogin("authentication/login");
+        }
+    }
 
     private async Task RunActionAsync(Guid id, Func<Task<FriendActionResult>> action)
     {

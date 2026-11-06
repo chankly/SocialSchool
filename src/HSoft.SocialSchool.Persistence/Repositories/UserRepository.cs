@@ -12,5 +12,12 @@ namespace HSoft.SocialSchool.Persistence.Repositories
             _dbContext.Set<User>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(user => user.ExternalIdentityId == externalIdentityId, cancellationToken);
+
+        public Task<bool> ExistsByNicknameAsync(
+            string nickname,
+            CancellationToken cancellationToken = default) =>
+            _dbContext.Set<User>()
+                .AsNoTracking()
+                .AnyAsync(user => user.Nickname == nickname, cancellationToken);
     }
 }

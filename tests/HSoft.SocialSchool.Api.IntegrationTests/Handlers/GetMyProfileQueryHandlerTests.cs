@@ -148,6 +148,11 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
                 string externalIdentityId,
                 CancellationToken cancellationToken = default) =>
                 Task.FromResult(externalIdentityId == ExternalId ? user : null);
+
+            public Task<bool> ExistsByNicknameAsync(
+                string nickname,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
         }
 
         private sealed class FakeAthleteRepository(Athlete? athlete) : FakeRepository<Athlete>, IAthleteRepository

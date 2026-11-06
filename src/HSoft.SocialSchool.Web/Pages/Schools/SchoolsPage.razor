@@ -3,6 +3,7 @@
 @inject ISchoolsService SchoolsService
 @inject ISportsService SportsService
 @inject ISessionService Session
+@inject NavigationManager Navigation
 
 <PageHeader Eyebrow="Comunidad" Title="Escuelas"
             Subtitle="Perfiles públicos de escuelas de deporte. El catálogo y los filtros se resuelven en memoria.">
@@ -189,9 +190,21 @@ else
         }
     }
 
-    private void SignInAsAthlete() => Session.UseScenario(DemoSessionScenario.AthleteWithProfile);
+    private void SignInAsAthlete() => SignIn(DemoSessionScenario.AthleteWithProfile);
 
-    private void SignInAsSchool() => Session.UseScenario(DemoSessionScenario.SchoolWithProfile);
+    private void SignInAsSchool() => SignIn(DemoSessionScenario.SchoolWithProfile);
+
+    private void SignIn(DemoSessionScenario scenario)
+    {
+        if (Session is IDemoSessionService demoSession)
+        {
+            demoSession.UseScenario(scenario);
+        }
+        else
+        {
+            Navigation.NavigateToLogin("authentication/login");
+        }
+    }
 
     private void SelectSport(Guid? sportId) => _sportFilter = sportId;
 
