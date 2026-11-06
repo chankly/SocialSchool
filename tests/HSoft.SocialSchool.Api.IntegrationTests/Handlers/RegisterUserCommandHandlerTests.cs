@@ -176,6 +176,18 @@ namespace HSoft.SocialSchool.Api.IntegrationTests.Handlers
 
         private sealed class FakeUserRepository(User? existing) : FakeRepository<User>, IUserRepository
         {
+            public Task<IReadOnlyList<User>> GetByIdsReadOnlyAsync(
+                IReadOnlyList<Guid> userIds,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
+            public Task<IReadOnlyList<User>> GetDiscoverableReadOnlyAsync(
+                Guid userId,
+                IReadOnlyList<Guid> excludedUserIds,
+                int limit,
+                CancellationToken cancellationToken = default) =>
+                throw new NotSupportedException();
+
             public List<User> Added { get; } = [];
 
             public Task<User?> GetByExternalIdReadOnlyAsync(

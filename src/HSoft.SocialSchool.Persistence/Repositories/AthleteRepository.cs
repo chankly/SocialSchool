@@ -11,5 +11,13 @@ namespace HSoft.SocialSchool.Persistence.Repositories
                 .AsNoTracking()
                 .Include(athlete => athlete.PracticedSports)
                 .FirstOrDefaultAsync(athlete => athlete.Id == id, cancellationToken);
+
+        public async Task<IReadOnlyList<Athlete>> GetByIdsReadOnlyAsync(
+            IReadOnlyList<Guid> athleteIds,
+            CancellationToken cancellationToken = default) =>
+            await _dbContext.Set<Athlete>()
+                .AsNoTracking()
+                .Where(athlete => athleteIds.Contains(athlete.Id))
+                .ToListAsync(cancellationToken);
     }
 }

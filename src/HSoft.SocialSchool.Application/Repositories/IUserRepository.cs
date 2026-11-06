@@ -18,5 +18,30 @@ namespace HSoft.SocialSchool.Application.Repositories
         /// si dos peticiones coinciden.
         /// </summary>
         Task<bool> ExistsByNicknameAsync(string nickname, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Devuelve las cuentas cuyo identificador está en la lista, sin rastrear. Las desconocidas
+        /// simplemente no aparecen en el resultado.
+        /// </summary>
+        /// <param name="userIds">Identificadores que se quieren resolver.</param>
+        /// <param name="cancellationToken">Token de cancelación de la petición.</param>
+        Task<IReadOnlyList<User>> GetByIdsReadOnlyAsync(
+            IReadOnlyList<Guid> userIds,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Devuelve las cuentas a las que el usuario puede enviar una solicitud: activas, con nick, distintas
+        /// de él y fuera de la lista de excluidas (amigos y solicitudes pendientes en cualquier dirección).
+        /// Ordenadas por nick y con un tope fijo.
+        /// </summary>
+        /// <param name="userId">Cuenta del usuario autenticado.</param>
+        /// <param name="excludedUserIds">Cuentas que no deben aparecer.</param>
+        /// <param name="limit">Número máximo de cuentas a devolver.</param>
+        /// <param name="cancellationToken">Token de cancelación de la petición.</param>
+        Task<IReadOnlyList<User>> GetDiscoverableReadOnlyAsync(
+            Guid userId,
+            IReadOnlyList<Guid> excludedUserIds,
+            int limit,
+            CancellationToken cancellationToken = default);
     }
 }
