@@ -3,8 +3,8 @@
 @inject ISessionService Session
 @inject WebAppSettings Settings
 
-<PageHeader Eyebrow="Boceto inicial" Title="@Greeting"
-            Subtitle="Una maqueta navegable de la web de SocialSchool, construida con Blazor WebAssembly: servicios HTTP reales o datos simulados según la configuración.">
+<PageHeader Eyebrow="Cliente web" Title="@Greeting"
+            Subtitle="La web de SocialSchool sobre Blazor WebAssembly, conectada al API: perfil propio, amistades y escuelas.">
     <Actions>
         <a class="btn btn-primary" href="profile">
             <Icon Name="user" Size="18" />
@@ -18,8 +18,8 @@
         <p class="eyebrow eyebrow-light">SocialSchool · cliente web</p>
         <h2>La trayectoria se ve. El nivel se contrasta.</h2>
         <p>
-            Deportistas y escuelas comparten perfil, amistades y asistencia. Esta primera maqueta se
-            centra en el perfil propio y deja el resto de las pantallas preparadas para crecer.
+            Deportistas y escuelas comparten perfil, amistades y asistencia. El perfil propio es la
+            puerta de entrada; las amistades y el directorio de escuelas completan la navegación.
         </p>
         <div class="button-row">
             <a class="btn btn-light" href="profile">Revisar mi perfil</a>
@@ -123,7 +123,7 @@
     <article class="card pillar">
         <span class="pillar-icon"><Icon Name="activity" Size="22" /></span>
         <h3>Nivel contrastable</h3>
-        <p>Las maniobras se puntúan entre iguales y escuelas. La maqueta aún no incluye esa pantalla.</p>
+        <p>Las maniobras se puntúan entre iguales y escuelas. Esa pantalla todavía no existe.</p>
     </article>
     <article class="card pillar">
         <span class="pillar-icon"><Icon Name="users" Size="22" /></span>
@@ -171,7 +171,7 @@
 
             <h4 class="small-heading">Siguientes pasos</h4>
             <ul class="check-list">
-                <li><Icon Name="check" Size="15" /> Perfil propio y catálogo de deportes contra el API, con sesión OIDC o de demo.</li>
+                <li><Icon Name="check" Size="15" /> Perfil propio y catálogo de deportes contra el API, con sesión OIDC.</li>
                 <li><Icon Name="check" Size="15" /> Alta de perfil de deportista y de escuela con validación en cliente.</li>
                 <li><Icon Name="check" Size="15" /> Añadir edición de perfil y catálogo de maniobras.</li>
             </ul>
@@ -180,30 +180,6 @@
 </div>
 
 @code {
-    private static readonly IReadOnlyList<ActivityItem> RecentActivity =
-    [
-        new ActivityItem(
-            "Bilbao Skate Lab",
-            "ha publicado una sesión libre para el sábado",
-            "hace 2 horas",
-            "school"),
-        new ActivityItem(
-            "Nerea Etxeberria",
-            "ha enviado una solicitud de amistad a Ana Otxoa",
-            "hace 5 horas",
-            "users"),
-        new ActivityItem(
-            "Olas del Norte",
-            "ha abierto el plazo de su campamento de verano",
-            "ayer",
-            "school"),
-        new ActivityItem(
-            "Marta Elorza",
-            "ha declarado una maniobra nueva en surf",
-            "ayer",
-            "trophy")
-    ];
-
     private string Greeting => $"Hola, {Session.DisplayName}";
 
     private string RawUserTypeText => Session.RawUserType ?? "(sin valor)";
@@ -225,6 +201,4 @@
     public void Dispose() => Session.Changed -= HandleSessionChanged;
 
     private void HandleSessionChanged() => _ = InvokeAsync(StateHasChanged);
-
-    private sealed record ActivityItem(string Title, string Detail, string When, string Icon);
 }

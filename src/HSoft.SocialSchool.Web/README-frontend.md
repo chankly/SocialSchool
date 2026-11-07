@@ -1,4 +1,4 @@
-# HSoft.SocialSchool.Web · boceto del cliente web
+# HSoft.SocialSchool.Web · cliente web
 
 > **Estado:** cliente conectado al API. No hay modo demo ni datos de ejemplo: si faltan
 > `ApiBaseUrl` u `Oidc` la aplicación muestra un aviso de configuración incompleta.
@@ -24,13 +24,12 @@ de deporte. El objetivo prioritario es representar el flujo real de **«mi perfi
 5. El **nick** no se pide al crear la cuenta: se fija una sola vez al completar el perfil.
 
 El resto de pantallas (inicio, escuela, directorio y amistades) completa la navegación y el lenguaje
-visual. El perfil y el catálogo de deportes pueden hablar con el API; amistades y escuelas siguen
-con servicios simulados.
+visual, y todas consultan el API: la aplicación no contiene datos de ejemplo.
 
 ## Cómo ejecutarlo
 
-Requisitos: **.NET 10 SDK**. En modo demo no hace falta base de datos, Keycloak ni la API en
-marcha; en modo real sí se necesitan el API, el realm de Keycloak y un cliente público de la web.
+Requisitos: **.NET 10 SDK**, el API en marcha, el realm de Keycloak y un cliente público de la web.
+Sin esa configuración la aplicación solo muestra el aviso de las claves que faltan.
 
 Desde la raíz del repositorio:
 
@@ -58,134 +57,131 @@ El proyecto está incluido en `HSoft.SocialSchool.slnx`, así que también compi
 dotnet build HSoft.SocialSchool.slnx
 ```
 
-## Modo demo y modo API real
+## Configuración
 
-La decisión se toma en un único punto, `Extensions/ServiceCollectionExtensions.cs`, a partir de
-`wwwroot/appsettings.json`:
+`WebAssemblyHostBuilder.CreateDefault` descarga la configuración de `wwwroot`; nunca lee el disco del
+equipo. En el navegador **no existen los user secrets** ni las variables de entorno, así que
+`dotnet user-secrets` no puede funcionar aquí. Los ficheros que se leen son dos:
 
-```json
-{
-  "ApiBaseUrl": "",
-  "Oidc": {
-    "Authority": "",
-    "ClientId": ""
-  }
-}
-```
+| Fichero | Cuándo | Contenido |
+|---|---|---|
+| `wwwroot/appsettings.json` | Siempre | Plantilla versionada, con los tres valores vacíos |
+| `wwwroot/appsettings.Development.json` | Si el entorno es `Development` | Los valores locales de depuración |
 
-- **Modo demo (valores vacíos, por defecto):** se registran los mocks, la sesión de demostración y el
-  selector de escenarios de la cabecera. No interviene Keycloak.
-- **Modo real (los tres valores completos):** se registra `AddOidcAuthentication` con un cliente
-  **público (PKCE)** y dos `HttpClient` tipados que pasan por `ApiAuthorizationMessageHandler`, de modo
-  que el bearer lo pone la librería OIDC y el navegador no guarda tokens a mano.
+El entorno lo pone el DevServer desde `Properties/launchSettings.json`, así que al depurar con Visual
+Studio o con `dotnet run` se carga el segundo fichero, y sus valores ganan sobre los del primero. En
+la publicación solo se pide el primero, salvo que el host anuncie `Development`.
 
-Ejemplo de configuración real (valores públicos, sin secretos):
+Las claves son las mismas en los dos:
 
 ```json
 {
   "ApiBaseUrl": "https://localhost:7146",
   "Oidc": {
-    "Authority": "https://keycloak.example.com/realms/socialschool",
+    "Authority": "https://<tu-keycloak>/realms/socialschool",
     "ClientId": "SocialSchool-Web"
   }
 }
 ```
 
-`Oidc:ClientId` es el identificador del cliente **público** de la web; **no** es el GUID de
-audiencia del API. Basta con vaciar cualquiera de los tres valores para volver al modo demo: la
-reversión no requiere tocar código.
+- **Los tres valores completos:** se registra `AddOidcAuthentication` con un cliente
+  **público (PKCE)** y dos `HttpClient` tipados que pasan por `ApiAuthorizationMessageHandler`, de modo
+  que el bearer lo pone la librería OIDC y el navegador no guarda tokens a mano.
 
-Para el modo real se añaden dos paquetes: `Microsoft.AspNetCore.Components.WebAssembly.Authentication`
+- **Alguno vacío:** no se registra ningún servicio de datos y la aplicación indica qué claves faltan.
+
+`Oidc:ClientId` es el identificador del cliente **público** de la web; **no** es el GUID de
+audiencia del API. Los tres valores son públicos por naturaleza: **nada de lo que se configure aquí
+es un secreto**, y por eso no hay un `secrets.json` que el navegador pueda leer. Si algún día hace
+falta un valor que no deba viajar en el bundle, tiene que servirlo la API y el cliente cargarlo
+antes de `Build()` con `AddJsonStream`.
+
+Ojo al publicar: `appsettings.Development.json` viaja en el bundle como cualquier fichero de
+`wwwroot` y es descargable, aunque la aplicación no lo lea fuera de `Development`.
+
+Se añaden dos paquetes: `Microsoft.AspNetCore.Components.WebAssembly.Authentication`
 (flujo OIDC y `AuthorizationMessageHandler`) y `Microsoft.Extensions.Http` (clientes tipados).
 
-## Cómo recorrer los estados del perfil
+## Sesión y estados del perfil
 
-La **sesión de demo** se cambia en el desplegable de la cabecera. Este selector solo existe en modo
-demo; con OIDC la identidad llega del token de Keycloak y el diálogo de acceso se sirve en
-`/authentication/login`.
+La identidad la pone Keycloak: el diálogo de acceso se sirve en `/authentication/login` y la sesión
+la mantiene `OidcSessionService`. La consulta `GET /api/user/profile/me` decide qué se pinta:
 
-| Sesión de demo | Token (`userType`) | Respuesta simulada | Qué se ve |
-|---|---|---|---|
-| Deportista · con perfil | `Deportista` | **200 OK** | Perfil de Ana Otxoa con su bloque `athlete` y sus deportes |
-| Deportista · sin perfil | `Athlete` | **204 No Content** | Formulario de alta de deportista |
-| Escuela · con perfil | `School` | **200 OK** | Perfil de Olas del Norte con su bloque `school` |
-| Escuela · sin perfil | `Escuela` | **204 No Content** | Formulario de alta de escuela + aviso de validación pendiente |
-| Sin sesión (401) | — | **401 Unauthorized** | Tarjeta de «no hay sesión» con botones para simular el regreso del login |
+| Respuesta | Qué se ve |
+|---|---|
+| **200 OK** | El perfil del tipo de cuenta que lleve el token, con sus datos y su deporte |
+| **204 No Content** | El formulario de alta del tipo de cuenta, con aviso de validación si es escuela |
+| **401** | Tarjeta de «no hay sesión» con el botón de acceso |
 
-### Del 204 al 200
-
-En cualquiera de las dos sesiones sin perfil, rellena el formulario y envíalo. El mock guarda el
-perfil por cuenta, la etiqueta de la API pasa a **200 OK** y la misma pantalla muestra la vista del
-perfil. El nick queda fijado.
-
-Nicks ya ocupados en los datos de ejemplo (para ver el conflicto de unicidad):
-
-`anaotxoa`, `olasdelnorte`, `admin`, `socialschool`, `soporte`, `ada`, `surf`.
-
-El botón **Reiniciar datos** del menú lateral recarga la aplicación y devuelve todos los mocks a su
-estado inicial.
+En las dos sesiones sin perfil, rellena el formulario y envíalo: se crea contra
+`POST /api/user/profile/me`, la pantalla pasa a la vista de **200** y el nick queda fijado.
 
 ## Páginas creadas
 
 | Ruta | Página | Contenido |
 |---|---|---|
-| `/` | Inicio | Resumen de la sesión, estados del endpoint de perfil, pilares del producto, actividad simulada y configuración de la maqueta |
-| `/profile` | **Mi perfil** | Núcleo de la maqueta: 200/204/401, formulario por tipo de cuenta, validación y vista del perfil |
+| `/` | Inicio | Resumen de la sesión, estados del endpoint de perfil, pilares del producto y configuración activa |
+| `/profile` | **Mi perfil** | Núcleo del cliente: 200/204/401, formulario por tipo de cuenta, validación y vista del perfil |
 | `/friends` | Amistades | Amigos, solicitudes recibidas/enviadas y cuentas por descubrir; aceptar, rechazar, cancelar, quitar y enviar |
 | `/schools` | Escuelas | Directorio con búsqueda por nombre/ciudad/deporte y filtro por deporte |
 | `/schools/{id}` | Detalle de escuela | Perfil público, contacto, servicios, asistentes y solicitud de amistad |
-| `/authentication/{action}` | Acceso | Callback de Keycloak; en modo demo muestra un aviso de configuración |
+| `/authentication/{action}` | Acceso | Callback de Keycloak; sin configuración muestra un aviso |
 | cualquier otra | No encontrada | Estado vacío dentro del layout |
 
 ## Servicios
 
-| Contrato | Implementación en demo | Implementación real | Responsabilidad |
+Todos son HTTP contra la API, con el bearer que pone `ApiAuthorizationMessageHandler`.
+
+| Contrato | Implementación | Responsabilidad | Endpoints |
 |---|---|---|---|
-| `ISessionService` | `MockSessionService` | `OidcSessionService` | Identidad y tipo de cuenta; notifica cambios |
-| `IProfileService` | `MockProfileService` | `HttpProfileService` | `GET`/`POST /api/user/profile/me` (200/204/401 y 400 con `detail`) |
-| `ISportsService` | `MockSportsService` | `HttpSportsService` | Catálogo local o `GET /api/sports` |
-| `IFriendsService` | `MockFriendsService` | — (sigue en mock) | Amistades y solicitudes con operaciones CRUD en memoria |
-| `ISchoolsService` | `MockSchoolsService` | — (sigue en mock) | Directorio y perfil público de seis escuelas |
-| `IDemoSessionService` | `MockSessionService` | — (no se registra) | Cambio de escenario de la sesión de demostración |
-| `MockDataStore` | (infraestructura de demo) | (infraestructura de demo) | Estado compartido y sembrado inicial; reserva de nicks |
-| `ProfileState` | (estado de UI) | (estado de UI) | Estado compartido del perfil, deduplicación de consultas y notificación |
+| `ISessionService` | `OidcSessionService` | Identidad y tipo de cuenta; notifica cambios | — (claims del token) |
+| `IProfileService` | `HttpProfileService` | Consulta y alta del perfil propio | `GET`/`POST /api/user/profile/me` |
+| `ISportsService` | `HttpSportsService` | Catálogo de deportes para los formularios | `GET /api/sports` |
+| `IFriendsService` | `HttpFriendsService` | Amistades, solicitudes y cuentas invitables, con sus acciones | `GET /api/friends` y las cinco acciones |
+| `ISchoolsService` | `HttpSchoolsService` | Directorio y ficha pública de escuelas | `GET /api/schools`, `GET /api/schools/{id}` |
+| `ProfileState` | (estado de UI) | Estado compartido del perfil y deduplicación de consultas | — |
 
-Los servicios se registran en `Extensions/ServiceCollectionExtensions.cs`. El modo demo y el modo
-real se eligen ahí, una sola vez. Los mocks son `Singleton` porque comparten el `MockDataStore`;
-`ProfileState` y la sesión OIDC son `Scoped`.
+Los servicios se registran en `Extensions/ServiceCollectionExtensions.cs`, en un único camino. Si
+`ApiBaseUrl` u `Oidc` están incompletos no se registra ninguno: quedan solo `WebAppSettings` y los
+validadores, y `App.razor` pinta el aviso. `WebAppSettings` y los validadores son `Singleton`; los
+clientes tipados, `ProfileState` y la sesión OIDC son `Scoped`.
 
-### Operaciones simuladas
+### Qué puede hacer la interfaz
 
-- Alta de perfil de deportista y de escuela, con latencia artificial y validación del tipo de cuenta.
-- En modo real, alta y consulta contra el API; en demo se mantiene la latencia y la reserva de nicks.
-- Conflicto de nick (equivalente a un 409) que se pinta sobre el campo.
-- Aceptar/rechazar solicitudes, cancelar una solicitud enviada, quitar una amistad y enviar solicitudes.
-- Envío de solicitud desde el detalle de una escuela, reutilizando `IFriendsService`.
-- Regla de producto aplicada en el mock: **dos escuelas no pueden ser amigas**.
-- Filtro de solicitudes y sugerencias cuando la sesión es de escuela (solo deportistas).
+- Consultar el perfil propio y darse de alta como deportista o como escuela, con validación del tipo
+  de cuenta y el conflicto de nick pintado sobre el campo.
+- Ver amigos, solicitudes recibidas y enviadas, y cuentas por descubrir; aceptar, rechazar, cancelar,
+  quitar una amistad y enviar solicitudes.
+- Enviar una solicitud desde la ficha de una escuela, reutilizando `IFriendsService`.
+- Recorrer el directorio de escuelas con búsqueda y filtro por deporte, y abrir su ficha con
+  servicios y asistentes.
+
+Los rechazos de negocio llegan como `400` con `detail` y se muestran tal cual; un `401` deja la
+tarjeta de sesión. **Dos escuelas no pueden ser amigas**: lo rechaza el API y la interfaz solo
+muestra el motivo.
 
 ## Supuestos de diseño
 
 1. **Ubicación y aislamiento:** el proyecto vive en `src/HSoft.SocialSchool.Web/` y no referencia
    ningún proyecto del backend. Se añade a la solución, pero se puede compilar de forma aislada.
-2. **Autenticación OIDC opcional:** en modo real `AddOidcAuthentication` usa un cliente público
-   (PKCE) y `ApiAuthorizationMessageHandler` adjunta el bearer; nunca se leen ni se guardan tokens a
-   mano. En modo demo `ISessionService` lo sustituye una sesión ficticia. `wwwroot/appsettings.json`
-   solo contiene valores públicos: **no hay secretos en el cliente** y el GUID de audiencia del API
-   no se usa como `clientId`.
+2. **Autenticación OIDC:** `AddOidcAuthentication` usa un cliente público (PKCE) y
+   `ApiAuthorizationMessageHandler` adjunta el bearer; nunca se leen ni se guardan tokens a mano.
+   `wwwroot/appsettings.json` solo contiene valores públicos: **no hay secretos en el cliente** y el
+   GUID de audiencia del API no se usa como `clientId`.
 3. **Normalización del tipo de cuenta:** `AccountTypeParser` acepta `Athlete`/`Deportista` y
    `School`/`Escuela`, sin distinguir mayúsculas ni espacios. Un valor desconocido deja la página en
    un estado informativo.
 4. **El 204 no es un error:** se representa como un estado propio que conduce al formulario de alta;
    nunca se usa un 404. El 401 se representa con una tarjeta de sesión, sin redirección real.
 5. **El nick se pide solo al completar el perfil**, una única vez, y se valida como alfanumérico de
-   3 a 20 caracteres. La vista lo muestra con un candado y el mock rechaza duplicados.
+   3 a 20 caracteres. La vista lo muestra con un candado y el API rechaza los duplicados; el mensaje
+   se pinta sobre el campo.
 6. **Contrato de alta:** los formularios envían `nickname` y exactamente un bloque (`athlete` o
    `school`) a `POST /api/user/profile/me`. El `200` devuelve el mismo objeto que la consulta y se
    aplica directamente al estado, sin una segunda petición. Un `400` con `detail` se muestra en el
    formulario; si el mensaje habla del nick, se pinta sobre ese campo y no se pierde lo escrito.
 7. **Fecha de nacimiento:** la respuesta usa `DateOnly`, pero el formulario trabaja con `DateTime?`
-   porque es el tipo que mejor encaja con `InputDate`; la conversión se hace en el mock.
+   porque es el tipo que mejor encaja con `InputDate`; la conversión se hace en `HttpProfileService`.
 8. **Lo que no devuelve el perfil propio:** maniobras, asistencias y servicios de la escuela no se
    incluyen en la vista de «mi perfil», tal y como fija el spec de perfil. Los servicios y asistentes
    sí aparecen en el detalle público de la escuela.
@@ -197,10 +193,10 @@ real se eligen ahí, una sola vez. Los mocks son `Singleton` porque comparten el
 11. **Estado compartido:** `ProfileState` evita consultas duplicadas y descarta respuestas antiguas
     cuando se cambia de sesión mientras hay una petición en vuelo.
 12. **Diseño visual:** hoja de estilos propia, sin Bootstrap ni CDN. Avatares con iniciales cuando no
-    hay imagen, para que la maqueta funcione sin conexión. Iconos SVG inline.
-13. **Amistades y escuelas son bocetos adicionales:** no sustituyen a los contratos del backend;
-    demuestran listados, estados de carga/vacío/error y operaciones en memoria. Las rutas de escuela
-    exigen sesión, igual que las consultas del producto.
+    hay imagen, para no depender de recursos externos. Iconos SVG inline.
+13. **Amistades y escuelas:** consumen `GET /api/friends` y `GET /api/schools`, y cubren listados,
+    estados de carga/vacío/error y las cinco acciones de amistad. Las rutas de escuela exigen
+    sesión, igual que las consultas del producto.
 
 ## Estructura
 
@@ -222,12 +218,12 @@ HSoft.SocialSchool.Web/
 │   ├── Common/            Country, CountryCatalog
 │   └── Friends/           FriendRequestDirection
 ├── Services/
-│   ├── Session/           ISessionService, sesión de demo y OidcSessionService
-│   ├── Profile/           contrato, mock, servicio HTTP, Requests/, Responses/
-│   ├── Sports/            contrato, mock, servicio HTTP y catálogo
-│   ├── Friends/           contrato, mock y Responses/
-│   ├── Schools/           contrato, mock y Responses/
-│   └── Demo/              MockDataStore, semilla y datos fijos
+│   ├── Common/            ProblemDetailsReader
+│   ├── Session/           ISessionService y OidcSessionService
+│   ├── Profile/           contrato, servicio HTTP, Requests/ y Responses/
+│   ├── Sports/            contrato, servicio HTTP y Responses/
+│   ├── Friends/           contrato, servicio HTTP, Requests/ y Responses/
+│   └── Schools/           contrato, servicio HTTP y Responses/
 ├── Validations/Profile/   validadores y reglas compartidas
 ├── State/                 ProfileState
 ├── Authentication/        ApiAuthorizationMessageHandler (bearer OIDC)
@@ -245,14 +241,13 @@ HSoft.SocialSchool.Web/
 - El proyecto no referencia ensamblados del backend y no modifica `src/HSoft.SocialSchool.{Api,Application,Domain,Persistence}`,
   `tests/`, `devops/`, `openspec/` ni `QWEN.md`.
 - Los estados de carga, vacío y error están representados en el perfil, las amistades y las escuelas.
-- La compilación prevista es `dotnet build src/HSoft.SocialSchool.Web/HSoft.SocialSchool.Web.csproj`
-  y `dotnet build HSoft.SocialSchool.slnx`. **En el entorno aislado en el que se generó la maqueta no
-  había ejecución de comandos disponible**, por lo que la compilación debe confirmarse al abrir la
-  solución; no se ha podido ejecutar `dotnet build` aquí.
+- La compilación se verifica con `dotnet build src/HSoft.SocialSchool.Web/HSoft.SocialSchool.Web.csproj`
+  y `dotnet build HSoft.SocialSchool.slnx`.
 
 ## Fuera de alcance
 
 - Edición de perfil, catálogo de maniobras y puntuaciones, muro/publicaciones, notificaciones,
   reportes y subida de imágenes.
-- Conexión real de amistades y escuelas: su backend todavía no existe y siguen con los mocks.
-- Pruebas automatizadas: no existe proyecto de tests en la solución y esta maqueta no añade uno.
+- Bloqueos y paginación: el API todavía no expone los bloqueos, y los listados van con un límite fijo
+  (50 escuelas y 20 cuentas invitables).
+- Pruebas automatizadas del cliente: la solución no tiene un proyecto de tests para la web.

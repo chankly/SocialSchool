@@ -21,6 +21,6 @@ public abstract record ProfileQueryResult
     /// <summary>No hay token válido: la API habría respondido 401.</summary>
     public sealed record Unauthorized : ProfileQueryResult;
 
-    /// <summary>Fallo de comunicación con la API simulada.</summary>
+    /// <summary>Fallo de comunicación con la API.</summary>
     public sealed record Failure(string Message) : ProfileQueryResult;
 }

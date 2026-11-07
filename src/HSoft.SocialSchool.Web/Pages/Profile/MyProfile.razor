@@ -128,7 +128,7 @@ else if (ProfileState.Profile is { } profile)
     {
         <Alert Tone="UiTone.Success" Title="Perfil creado" IconName="check">
             <p class="alert-text">
-                La maqueta ya devuelve <strong>200 OK</strong> para esta cuenta. El nick ha quedado fijado.
+                La API ya devuelve <strong>200 OK</strong> para esta cuenta. El nick ha quedado fijado.
             </p>
         </Alert>
     }
@@ -139,15 +139,15 @@ else if (ProfileState.Profile is { } profile)
         <Icon Name="lock" Size="16" />
         <p>
             El nick <strong>@("@")@profile.Nickname</strong> es único e inmutable.
-            La edición del resto de campos llegará con el endpoint de actualización, que esta maqueta
-            todavía no incluye.
+            La edición del resto de campos llegará con el endpoint de actualización, que todavía no
+            existe.
         </p>
     </div>
 }
 else
 {
     <Alert Tone="UiTone.Warning" Title="Estado no representable" IconName="alert">
-        <p class="alert-text">La combinación de estado y perfil no se puede pintar. Recarga la maqueta.</p>
+        <p class="alert-text">La combinación de estado y perfil no se puede pintar. Recarga la página.</p>
     </Alert>
 }
 
@@ -213,7 +213,7 @@ else
 
     private void SignInAsSchool() => SignInWithOidc();
 
-    /// <summary>Sesión real: la librería OIDC se encarga del login. Sin escenario de demostración.</summary>
+    /// <summary>Sesión real: la librería OIDC se encarga del login.</summary>
     private void SignInWithOidc() => Navigation.NavigateToLogin("authentication/login");
 
     private void SignIn()

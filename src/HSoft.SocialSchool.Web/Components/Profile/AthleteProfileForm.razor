@@ -58,7 +58,7 @@
             </FormField>
 
             <FormField Label="Foto de perfil" For="athlete-picture"
-                       Help="URL pública de una imagen. En la maqueta no se suben archivos.">
+                       Help="URL pública de una imagen. No se suben archivos.">
                 <InputText id="athlete-picture" class="input" @bind-Value="_model.ProfilePictureUrl"
                            placeholder="https://…" />
                 <ValidationMessage For="() => _model.ProfilePictureUrl" class="field-error" />

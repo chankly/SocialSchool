@@ -76,7 +76,7 @@
             </FormField>
 
             <FormField Label="Logo" For="school-logo"
-                       Help="URL pública de una imagen. En la maqueta no se suben archivos.">
+                       Help="URL pública de una imagen. No se suben archivos.">
                 <InputText id="school-logo" class="input" @bind-Value="_model.LogoUrl"
                            placeholder="https://…" />
                 <ValidationMessage For="() => _model.LogoUrl" class="field-error" />

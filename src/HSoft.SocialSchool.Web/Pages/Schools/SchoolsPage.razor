@@ -30,7 +30,7 @@
 }
 else if (_loading)
 {
-    <LoadingPanel Message="Cargando el directorio simulado de escuelas…" />
+    <LoadingPanel Message="Cargando el directorio de escuelas…" />
 }
 else if (_error is not null)
 {
@@ -175,7 +175,7 @@ else
         }
         catch (Exception)
         {
-            _error = "El directorio ficticio de escuelas no ha respondido.";
+            _error = "El directorio de escuelas no ha respondido.";
         }
         finally
         {

@@ -1,7 +1,7 @@
 /* ==========================================================================
-   SocialSchool · boceto web
+   SocialSchool · cliente web
    Hoja de estilos única, sin dependencias externas. Los iconos son SVG inline
-   y la tipografía usa la pila del sistema para poder ejecutar la maqueta sin red.
+   y la tipografía usa la pila del sistema para no depender de fuentes externas.
    ========================================================================== */
 
 :root {
@@ -236,14 +236,14 @@ code {
     margin-top: auto;
 }
 
-.demo-card {
+.sidebar-card {
     background: rgba(255, 255, 255, .05);
     border: 1px solid rgba(255, 255, 255, .08);
     border-radius: 16px;
     padding: 14px;
 }
 
-.demo-card-title {
+.sidebar-card-title {
     align-items: center;
     color: #e6fffb;
     display: flex;
@@ -253,7 +253,7 @@ code {
     margin: 0 0 6px;
 }
 
-.demo-card-text {
+.sidebar-card-text {
     color: #93aeb9;
     font-size: .74rem;
     line-height: 1.5;

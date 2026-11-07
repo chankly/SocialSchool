@@ -18,12 +18,12 @@
         <NavMenu />
 
         <div class="sidebar-footer">
-                <div class="demo-card">
-                    <p class="demo-card-title">
+                <div class="sidebar-card">
+                    <p class="sidebar-card-title">
                         <Icon Name="shield" Size="16" />
                         Sesión de Keycloak
                     </p>
-                    <p class="demo-card-text">
+                    <p class="sidebar-card-text">
                         @(Session.IsAuthenticated
                             ? $"Conectado como {Session.Email}."
                             : "No hay una sesión activa. Inicia sesión para consultar tu perfil.")
@@ -50,13 +50,12 @@
     <div class="app-main">
         <header class="topbar">
             <div class="session-picker">
-                    <span class="topbar-label">Autenticación OIDC</span>
-                    <p class="session-detail">
-                        @(Session.IsAuthenticated
-                            ? "Sesión válida: las llamadas al API llevan el bearer automáticamente."
-                            : "Sin sesión: al consultar el API se redirige al inicio de sesión.")
-                    </p>
-                }
+                <span class="topbar-label">Autenticación OIDC</span>
+                <p class="session-detail">
+                    @(Session.IsAuthenticated
+                        ? "Sesión válida: las llamadas al API llevan el bearer automáticamente."
+                        : "Sin sesión: al consultar el API se redirige al inicio de sesión.")
+                </p>
             </div>
 
             <div class="topbar-user">
@@ -89,7 +88,7 @@
                     <div class="page">
                         <Alert Tone="UiTone.Danger" Title="Algo se ha roto en esta pantalla" IconName="alert">
                             <p class="alert-text">
-                                La maqueta ha capturado un error inesperado para que el resto de la navegación siga funcionando.
+                                La aplicación ha capturado un error inesperado para que el resto de la navegación siga funcionando.
                             </p>
                             <button type="button" class="btn btn-outline btn-sm" @onclick="Reload">Recargar la aplicación</button>
                         </Alert>

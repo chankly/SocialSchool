@@ -2,7 +2,7 @@ using HSoft.SocialSchool.Web.Services.Profile.Responses;
 
 namespace HSoft.SocialSchool.Web.Services.Profile;
 
-/// <summary>Resultado de crear el perfil en la API simulada.</summary>
+/// <summary>Resultado de crear el perfil en la API.</summary>
 public abstract record ProfileSaveResult
 {
     private ProfileSaveResult()
@@ -18,6 +18,6 @@ public abstract record ProfileSaveResult
     /// <summary>No hay sesión válida.</summary>
     public sealed record Unauthorized : ProfileSaveResult;
 
-    /// <summary>Fallo simulado de la API.</summary>
+    /// <summary>Fallo de la API.</summary>
     public sealed record Failure(string Message) : ProfileSaveResult;
 }

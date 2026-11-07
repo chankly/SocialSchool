@@ -3,9 +3,8 @@ using HSoft.SocialSchool.Web.Services.Profile.Requests;
 namespace HSoft.SocialSchool.Web.Services.Profile;
 
 /// <summary>
-/// Perfil propio del usuario autenticado. El mock reproduce el contrato de
-/// <c>GET /api/user/profile/me</c> (200/204/401) y simula también el alta, que en la API
-/// real aún no está expuesta.
+/// Perfil propio del usuario autenticado: consulta de <c>GET /api/user/profile/me</c>
+/// (200/204/401) y alta con <c>POST /api/user/profile/me</c>.
 /// </summary>
 public interface IProfileService
 {
@@ -20,12 +19,12 @@ public interface IProfileService
     /// </remarks>
     Task<ProfileQueryResult> GetMyProfileAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Simula el alta del perfil de un deportista.</summary>
+    /// <summary>Da de alta el perfil de un deportista.</summary>
     Task<ProfileSaveResult> CreateAthleteProfileAsync(
         CreateAthleteProfileRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Simula el alta del perfil de una escuela.</summary>
+    /// <summary>Da de alta el perfil de una escuela.</summary>
     Task<ProfileSaveResult> CreateSchoolProfileAsync(
         CreateSchoolProfileRequest request,
         CancellationToken cancellationToken = default);

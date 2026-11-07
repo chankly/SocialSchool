@@ -3,8 +3,7 @@ using HSoft.SocialSchool.Web.Services.Friends.Responses;
 namespace HSoft.SocialSchool.Web.Services.Friends;
 
 /// <summary>
-/// Amistades y solicitudes simuladas. Las operaciones modifican el estado en memoria para
-/// que la interfaz responda como lo haría contra la API real.
+/// Amistades y solicitudes contra la API: resumen, envío y resolución.
 /// </summary>
 public interface IFriendsService
 {

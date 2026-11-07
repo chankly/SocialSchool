@@ -203,7 +203,7 @@ else if (_overview is not null)
                 @if (_overview.Suggestions.Count == 0)
                 {
                     <EmptyState Icon="compass" Title="No quedan sugerencias"
-                                Message="Has enviado solicitudes a todas las cuentas que aparecían en la maqueta." />
+                                Message="Has enviado solicitudes a todas las cuentas disponibles." />
                 }
                 else
                 {
@@ -314,7 +314,7 @@ else if (_overview is not null)
             var result = await action();
             _actionFailed = !result.IsSuccess;
             _actionMessage = result.IsSuccess
-                ? "Los datos ficticios se han actualizado."
+                ? "La lista se ha actualizado."
                 : result.Error;
 
             if (result.IsSuccess)
@@ -325,7 +325,7 @@ else if (_overview is not null)
         catch (Exception)
         {
             _actionFailed = true;
-            _actionMessage = "No se ha podido completar la operación simulada.";
+            _actionMessage = "No se ha podido completar la operación.";
         }
         finally
         {

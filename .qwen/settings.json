@@ -28,7 +28,8 @@
       "Bash(====)",
       "Bash(c:\\tools\\terraform_1.16.5\\terraform.exe *)",
       "Bash(rmdir *)",
-      "Bash(npx *)"
+      "Bash(npx *)",
+      "Bash(type *)"
     ]
   },
   "$version": 4

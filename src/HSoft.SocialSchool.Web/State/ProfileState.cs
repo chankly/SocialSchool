@@ -22,7 +22,7 @@ public enum ProfileLoadStatus
     /// <summary>No hay sesión (401).</summary>
     Unauthorized = 4,
 
-    /// <summary>Error de la API simulada.</summary>
+    /// <summary>Error de la API.</summary>
     Failed = 5
 }
 

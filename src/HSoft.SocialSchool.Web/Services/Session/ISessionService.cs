@@ -3,9 +3,9 @@ using HSoft.SocialSchool.Web.Models.Accounts;
 namespace HSoft.SocialSchool.Web.Services.Session;
 
 /// <summary>
-/// Identidad del usuario autenticado. En modo demo la implementa una sesión ficticia;
-/// con OIDC se resuelve a partir de los claims del token de Keycloak. El tipo de cuenta
-/// llega como <c>userType</c> y se normaliza con <see cref="AccountTypeParser"/>.
+/// Identidad del usuario autenticado, resuelta a partir de los claims del token de
+/// Keycloak. El tipo de cuenta llega como <c>userType</c> y se normaliza con
+/// <see cref="AccountTypeParser"/>.
 /// </summary>
 public interface ISessionService
 {
@@ -35,7 +35,6 @@ public interface ISessionService
 
     /// <summary>
     /// Resuelve la identidad cuando el proveedor la carga de forma asíncrona (OIDC).
-    /// La sesión de demostración ya está disponible y no hace nada.
     /// </summary>
     Task EnsureLoadedAsync(CancellationToken cancellationToken = default);
 }
