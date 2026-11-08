@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject ProfileState ProfileState
 @inject ISessionService Session
-@inject NavigationManager Navigation
 
 <PageHeader Eyebrow="Mi cuenta"
             Title="Mi perfil"
@@ -28,33 +27,10 @@
 {
     <LoadingPanel Message="Consultando el perfil…" />
 }
-else if (ProfileState.Status == ProfileLoadStatus.Unauthorized)
-{
-    <section class="auth-card card">
-        <div class="card-body">
-            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
-            <p class="state-code state-code-inline">401 Unauthorized</p>
-            <h2>No hay ninguna sesión activa</h2>
-            <p>
-                La petición al perfil no lleva un token válido, así que la API no la atiende.
-                Inicia sesión de nuevo para continuar.
-            </p>
-            <div class="button-row">
-                <button type="button" class="btn btn-primary" @onclick="SignInWithOidc">
-                    <Icon Name="lock" Size="18" />
-                    Iniciar sesión
-                </button>
-            </div>
-            <p class="muted small">
-                El token lo gestiona la librería OIDC; nunca se guarda a mano en el navegador.
-            </p>
-        </div>
-    </section>
-}
-else if (ProfileState.Status == ProfileLoadStatus.Failed)
+else if (ProfileState.Status is ProfileLoadStatus.Failed or ProfileLoadStatus.Unauthorized)
 {
     <Alert Tone="UiTone.Danger" Title="No se ha podido consultar el perfil" IconName="alert">
-        <p class="alert-text">@ProfileState.ErrorMessage</p>
+        <p class="alert-text">@(ProfileState.ErrorMessage ?? "La sesión ya no es válida.")</p>
         <button type="button" class="btn btn-outline btn-sm" @onclick="RetryAsync">Reintentar</button>
     </Alert>
 }
@@ -207,19 +183,6 @@ else
     {
         _created = true;
         ProfileState.ApplyProfile(profile);
-    }
-
-    private void SignInAsAthlete() => SignInWithOidc();
-
-    private void SignInAsSchool() => SignInWithOidc();
-
-    /// <summary>Sesión real: la librería OIDC se encarga del login.</summary>
-    private void SignInWithOidc() => Navigation.NavigateToLogin("authentication/login");
-
-    private void SignIn()
-    {
-        if (Session.IsAuthenticated)
-            Navigation.NavigateToLogin("authentication/login");
     }
 
     private async Task RetryAsync() => await ProfileState.LoadAsync(force: true);

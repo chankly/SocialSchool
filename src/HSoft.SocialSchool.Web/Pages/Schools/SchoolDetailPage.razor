@@ -3,7 +3,6 @@
 @inject ISchoolsService SchoolsService
 @inject IFriendsService FriendsService
 @inject ISessionService Session
-@inject NavigationManager Navigation
 
 <a class="back-link" href="schools">
     <Icon Name="arrow-right" Size="16" CssClass="icon-back" />
@@ -17,23 +16,7 @@
     </Actions>
 </PageHeader>
 
-@if (!Session.IsAuthenticated)
-{
-    <section class="auth-card card">
-        <div class="card-body">
-            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
-            <h2>Necesitas una sesión para ver esta escuela</h2>
-            <p>Los perfiles públicos de escuela están disponibles para usuarios autenticados.</p>
-            <div class="button-row">
-                <button type="button" class="btn btn-primary" @onclick="SignIn">
-                    <Icon Name="user" Size="18" />
-                    Iniciar sesión
-                </button>
-            </div>
-        </div>
-    </section>
-}
-else if (_loading)
+@if (_loading)
 {
     <LoadingPanel Message="Cargando el perfil público de la escuela…" />
 }
@@ -263,13 +246,6 @@ else if (_school is { } detail)
         _error = null;
         _actionMessage = null;
 
-        if (!Session.IsAuthenticated)
-        {
-            _school = null;
-            _loading = false;
-            return;
-        }
-
         _loading = true;
         _school = null;
 
@@ -286,8 +262,6 @@ else if (_school is { } detail)
             _loading = false;
         }
     }
-
-    private void SignIn() => Navigation.NavigateToLogin("authentication/login");
 
     private async Task SendFriendRequestAsync()
     {

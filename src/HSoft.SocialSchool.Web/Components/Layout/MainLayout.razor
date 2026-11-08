@@ -23,25 +23,11 @@
                         <Icon Name="shield" Size="16" />
                         Sesión de Keycloak
                     </p>
-                    <p class="sidebar-card-text">
-                        @(Session.IsAuthenticated
-                            ? $"Conectado como {Session.Email}."
-                            : "No hay una sesión activa. Inicia sesión para consultar tu perfil.")
-                    </p>
-                    @if (Session.IsAuthenticated)
-                    {
-                        <button type="button" class="btn btn-sidebar" @onclick="SignOut">
-                            <Icon Name="lock" Size="16" />
-                            Cerrar sesión
-                        </button>
-                    }
-                    else
-                    {
-                        <button type="button" class="btn btn-sidebar" @onclick="SignIn">
-                            <Icon Name="user" Size="16" />
-                            Iniciar sesión
-                        </button>
-                    }
+                    <p class="sidebar-card-text">Conectado como @Session.Email.</p>
+                    <button type="button" class="btn btn-sidebar" @onclick="SignOut">
+                        <Icon Name="lock" Size="16" />
+                        Cerrar sesión
+                    </button>
                 </div>
                 <p class="sidebar-note">El token lo gestiona la librería OIDC; nunca se guarda a mano.</p>
         </div>
@@ -52,9 +38,7 @@
             <div class="session-picker">
                 <span class="topbar-label">Autenticación OIDC</span>
                 <p class="session-detail">
-                    @(Session.IsAuthenticated
-                        ? "Sesión válida: las llamadas al API llevan el bearer automáticamente."
-                        : "Sin sesión: al consultar el API se redirige al inicio de sesión.")
+                    Sesión válida: las llamadas al API llevan el bearer automáticamente.
                 </p>
             </div>
 
@@ -114,8 +98,6 @@
     public void Dispose() => Session.Changed -= HandleSessionChanged;
 
     private void HandleSessionChanged() => _ = InvokeAsync(StateHasChanged);
-
-    private void SignIn() => Navigation.NavigateToLogin("authentication/login");
 
     private void SignOut() => Navigation.NavigateToLogout("authentication/logout");
 

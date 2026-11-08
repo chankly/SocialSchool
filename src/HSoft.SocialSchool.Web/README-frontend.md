@@ -26,6 +26,11 @@ de deporte. El objetivo prioritario es representar el flujo real de **«mi perfi
 El resto de pantallas (inicio, escuela, directorio y amistades) completa la navegación y el lenguaje
 visual, y todas consultan el API: la aplicación no contiene datos de ejemplo.
 
+**Acceso:** toda la interfaz exige sesión. Sin sesión, cualquier ruta lanza el acceso contra Keycloak y,
+al volver, aterriza en la que se estaba pidiendo (o en el perfil si se abrió la raíz). Una respuesta
+`401` con la aplicación abierta hace lo mismo con la ruta actual. Solo las rutas `/authentication/*`
+son anónimas; sin configuración se muestra el aviso de claves que faltan en vez de intentar autenticar.
+
 ## Cómo ejecutarlo
 
 Requisitos: **.NET 10 SDK**, el API en marcha, el realm de Keycloak y un cliente público de la web.
@@ -172,7 +177,7 @@ muestra el motivo.
    `School`/`Escuela`, sin distinguir mayúsculas ni espacios. Un valor desconocido deja la página en
    un estado informativo.
 4. **El 204 no es un error:** se representa como un estado propio que conduce al formulario de alta;
-   nunca se usa un 404. El 401 se representa con una tarjeta de sesión, sin redirección real.
+   nunca se usa un 404. Un `401` no se pinta: devuelve al acceso conservando la ruta.
 5. **El nick se pide solo al completar el perfil**, una única vez, y se valida como alfanumérico de
    3 a 20 caracteres. La vista lo muestra con un candado y el API rechaza los duplicados; el mensaje
    se pinta sobre el campo.

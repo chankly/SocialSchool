@@ -29,7 +29,8 @@
       "Bash(c:\\tools\\terraform_1.16.5\\terraform.exe *)",
       "Bash(rmdir *)",
       "Bash(npx *)",
-      "Bash(type *)"
+      "Bash(type *)",
+      "Read(C:\\Users\\hevia\\.nuget\\packages\\microsoft.aspnetcore.components.webassembly.authentication\\10.0.0\\lib\\net10.0/**)"
     ]
   },
   "$version": 4

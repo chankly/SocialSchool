@@ -2,7 +2,6 @@
 @implements IDisposable
 @inject IFriendsService FriendsService
 @inject ISessionService Session
-@inject NavigationManager Navigation
 
 <PageHeader Eyebrow="Comunidad" Title="Amistades"
             Subtitle="Amigos, solicitudes y cuentas por descubrir. Todo se consulta en el API y se refresca tras cada acción.">
@@ -11,23 +10,7 @@
     </Actions>
 </PageHeader>
 
-@if (!Session.IsAuthenticated)
-{
-    <section class="auth-card card">
-        <div class="card-body">
-            <span class="auth-icon"><Icon Name="lock" Size="26" /></span>
-            <h2>Necesitas una sesión para ver tus amistades</h2>
-            <p>Las listas están sujetas a las reglas de visibilidad del producto y requieren usuario autenticado.</p>
-            <div class="button-row">
-                <button type="button" class="btn btn-primary" @onclick="SignIn">
-                    <Icon Name="user" Size="18" />
-                    Iniciar sesión
-                </button>
-            </div>
-        </div>
-    </section>
-}
-else if (_loading)
+@if (_loading)
 {
     <LoadingPanel Message="Cargando amistades…" />
 }
@@ -270,13 +253,6 @@ else if (_overview is not null)
         _actionMessage = null;
         _actionFailed = false;
 
-        if (!Session.IsAuthenticated)
-        {
-            _overview = new FriendsOverviewResponse([], [], [], []);
-            _loading = false;
-            return;
-        }
-
         _loading = true;
 
         try
@@ -296,8 +272,6 @@ else if (_overview is not null)
     private async Task RetryAsync() => await LoadAsync();
 
     private void SelectTab(FriendsTab tab) => _tab = tab;
-
-    private void SignIn() => Navigation.NavigateToLogin("authentication/login");
 
     private async Task RunActionAsync(Guid id, Func<Task<FriendActionResult>> action)
     {

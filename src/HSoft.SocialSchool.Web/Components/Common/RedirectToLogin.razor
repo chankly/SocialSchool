@@ -1,0 +1,23 @@
+@inject NavigationManager Navigation
+
+@code {
+    /// <summary>
+    /// La aplicación exige sesión en todas sus rutas, así que no hay nada que enseñar aquí: en cuanto
+    /// el router decide que no hay usuario, se lanza el acceso llevándose la ruta pedida. La raíz no
+    /// cuenta como destino; en ese caso se vuelve al perfil.
+    /// </summary>
+    protected override void OnInitialized() => Navigation.NavigateToLogin(
+        "authentication/login",
+        new InteractiveRequestOptions
+        {
+            Interaction = InteractionType.SignIn,
+            ReturnUrl = CurrentReturnUrl()
+        });
+
+    private string CurrentReturnUrl()
+    {
+        var route = Navigation.ToBaseRelativePath(Navigation.Uri);
+
+        return string.IsNullOrWhiteSpace(route) ? "profile" : route;
+    }
+}

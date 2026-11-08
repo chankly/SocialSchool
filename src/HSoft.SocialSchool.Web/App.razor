@@ -2,24 +2,35 @@
 
 @if (Settings.IsConfigured)
 {
-    <Router AppAssembly="@typeof(Program).Assembly">
-        <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-        </Found>
-        <NotFound>
-            <LayoutView Layout="@typeof(MainLayout)">
-                <div class="page">
-                    <div class="empty-state empty-state-page">
-                        <span class="empty-icon"><Icon Name="compass" Size="30" /></span>
-                        <h1>Esta página no existe</h1>
-                        <p>La dirección que has abierto no corresponde a ninguna pantalla.</p>
-                        <a class="btn btn-primary" href="">Volver al inicio</a>
+    <CascadingAuthenticationState>
+        <Router AppAssembly="@typeof(Program).Assembly">
+            <Found Context="routeData">
+                <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                    <Authorizing>
+                        <div class="page">
+                            <LoadingPanel Message="Comprobando la sesión…" />
+                        </div>
+                    </Authorizing>
+                    <NotAuthorized>
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeRouteView>
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </Found>
+            <NotFound>
+                <LayoutView Layout="@typeof(MainLayout)">
+                    <div class="page">
+                        <div class="empty-state empty-state-page">
+                            <span class="empty-icon"><Icon Name="compass" Size="30" /></span>
+                            <h1>Esta página no existe</h1>
+                            <p>La dirección que has abierto no corresponde a ninguna pantalla.</p>
+                            <a class="btn btn-primary" href="">Volver al inicio</a>
+                        </div>
                     </div>
-                </div>
-            </LayoutView>
-        </NotFound>
-    </Router>
+                </LayoutView>
+            </NotFound>
+        </Router>
+    </CascadingAuthenticationState>
 }
 else
 {
