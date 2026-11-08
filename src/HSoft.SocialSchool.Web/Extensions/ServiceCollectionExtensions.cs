@@ -70,30 +70,35 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ISessionService, OidcSessionService>();
         services.AddScoped<ApiAuthorizationMessageHandler>();
+        services.AddScoped<UnauthorizedRedirectHandler>();
 
         services.AddHttpClient<IProfileService, HttpProfileService>(client =>
             {
                 client.BaseAddress = ToBaseAddress(settings.ApiBaseUrl);
             })
-            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
+            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>()
+            .AddHttpMessageHandler<UnauthorizedRedirectHandler>();
 
         services.AddHttpClient<ISportsService, HttpSportsService>(client =>
             {
                 client.BaseAddress = ToBaseAddress(settings.ApiBaseUrl);
             })
-            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
+            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>()
+            .AddHttpMessageHandler<UnauthorizedRedirectHandler>();
 
         services.AddHttpClient<IFriendsService, HttpFriendsService>(client =>
             {
                 client.BaseAddress = ToBaseAddress(settings.ApiBaseUrl);
             })
-            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
+            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>()
+            .AddHttpMessageHandler<UnauthorizedRedirectHandler>();
 
         services.AddHttpClient<ISchoolsService, HttpSchoolsService>(client =>
             {
                 client.BaseAddress = ToBaseAddress(settings.ApiBaseUrl);
             })
-            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>();
+            .AddHttpMessageHandler<ApiAuthorizationMessageHandler>()
+            .AddHttpMessageHandler<UnauthorizedRedirectHandler>();
     }
 
     private static Uri ToBaseAddress(string apiBaseUrl) =>
