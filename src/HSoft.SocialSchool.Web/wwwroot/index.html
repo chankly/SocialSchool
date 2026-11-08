@@ -25,7 +25,11 @@
         <a class="dismiss">✕</a>
     </div>
 
+    <!-- El paquete OIDC no trae inicializador de JS: publica el global `AuthenticationService`
+         con este script, que tiene que ejecutarse antes de arrancar Blazor. -->
+    <script src="_content/Microsoft.AspNetCore.Components.WebAssembly.Authentication/AuthenticationService.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
+
 </body>
 
 </html>
